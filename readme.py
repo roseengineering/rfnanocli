@@ -75,16 +75,19 @@ First initialize the calibration file, setting the
 frequency sweep.
 
 {run("python3 nanocli.py --init --start 10e3 --stop 10e6 --points 1001")}
+
+Print details on the calibration file.
+
 {run("python3 nanocli.py --details")}
 
-Perform the SOLT calibrations.
+The calibration file has no calibration data.
+Next perform the SOLT calibrations.
 
 ```
 $ python3 nanocli.py --open
 $ python3 nanocli.py --short
 $ python3 nanocli.py --load
 $ python3 nanocli.py --thru
-$ python3 nanocli.py --details
 ```
 
 Now run a sweep.  
