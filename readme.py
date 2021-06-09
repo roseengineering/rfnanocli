@@ -116,7 +116,7 @@ and without any interpolation of the calibration data.
 
 By default, no interpolation is performed
 on your calibration data when making a measurement.  
-The frequencies for the measurement sweep is taken directly from 
+The frequencies for the measurement sweep are taken directly from 
 the calibration file.  
 
 However if the range of the frequency sweep
