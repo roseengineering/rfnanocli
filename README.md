@@ -11,7 +11,7 @@ in touchstone format.
 In addition the utility provides its own error correction.
 It does not use the onboard calibrations features
 of either nano.
-You must calibrate your nano separately using this utility.
+You must calibrate your nano separately to use this utility.
 The calibration data is stored in a npz file on your computer.
 
 In order to perform a measure sweep on the original nano, the
@@ -30,8 +30,8 @@ sweep measurements.  This is the same SOLT
 calibration method that you use to calibrate the nano from its UI.
 
 To calibrate the nano using the utility, first initialize the
-calibration with your frequency sweep.  This
-sweep will be written to your calibration file.  If the calibration
+calibration file with your frequency sweep.
+If the calibration
 file already exists, it will be overwritten.  By default
 the name of the file is cal.npz.
 
@@ -51,7 +51,6 @@ Requirement already satisfied: numpy in /usr/lib/python3/dist-packages (from -r 
 ```
 
 
-Then run the utility using python3.
 
 ## Command Line Usage
 
@@ -109,7 +108,7 @@ cals:   <none>
 ```
 
 
-Next perform SOLT calibration.
+Perform the SOLT calibrations.
 
 ```
 $ python3 nanocli.py --open
@@ -125,75 +124,87 @@ Now run a sweep.
 ```
 $ python3 nanocli.py --points 5
 # MHz S MA R 50
-0.01             0.059735   -87.740        0.31423     2.343        0.31423     2.343       0.059735   -87.740
-2.5075          0.0016811   117.338         1.3665    -2.531         1.3665    -2.531      0.0016811   117.338
-5.005          0.00054634   -95.277        0.85531   -15.137        0.85531   -15.137     0.00054634   -95.277
-7.5025          0.0018721   -63.487        0.78932   -13.616        0.78932   -13.616      0.0018721   -63.487
-10              0.0035976   -69.912        0.76787   -13.945        0.76787   -13.945      0.0035976   -69.912
+0.01             0.058815   -88.097        0.31499     2.523        0.31499     2.523       0.058815   -88.097
+2.5075         0.00095648   105.554         1.2901    -6.751         1.2901    -6.751     0.00095648   105.554
+5.005          0.00058297   -75.663        0.84085   -14.255        0.84085   -14.255     0.00058297   -75.663
+7.5025          0.0021585   -62.841        0.78664   -13.163        0.78664   -13.163      0.0021585   -62.841
+10              0.0036897   -69.325        0.76634   -13.698        0.76634   -13.698      0.0036897   -69.325
 ```
+
+
+Return the results in dB.
 
 
 ```
 $ python3 nanocli.py --db --points 5
 # MHz S DB R 50
-0.01           -24.400   -87.701     -10.054     2.354     -10.054     2.354     -24.400   -87.701
-2.5075         -55.780   132.885       2.712    -2.543       2.712    -2.543     -55.780   132.885
-5.005          -68.604   -69.262      -1.361   -15.155      -1.361   -15.155     -68.604   -69.262
-7.5025         -53.954   -61.698      -2.054   -13.607      -2.054   -13.607     -53.954   -61.698
-10             -48.844   -69.557      -2.295   -13.944      -2.295   -13.944     -48.844   -69.557
+0.01           -24.538   -87.865     -10.053     2.518     -10.053     2.518     -24.538   -87.865
+2.5075         -58.316   113.212       2.224    -6.743       2.224    -6.743     -58.316   113.212
+5.005          -63.492   -72.534      -1.508   -14.245      -1.508   -14.245     -63.492   -72.534
+7.5025         -53.164   -67.241      -2.088   -13.163      -2.088   -13.163     -53.164   -67.241
+10             -48.809   -67.789      -2.310   -13.690      -2.310   -13.690     -48.809   -67.789
 ```
+
+
+Output measurements in a format that can be read by numpy.
 
 
 ```
 $ python3 nanocli.py --text --points 5
-10000          0.00237336-0.0590712j       0.314305+0.0130707j
-2507500      -0.00105983+0.00161584j          1.3657-0.061132j
-5005000      0.00014045-0.000487809j        0.825504-0.223203j
-7502500       0.00096275-0.00183625j        0.767103-0.185639j
-10000000      0.00136009-0.00331973j        0.745212-0.185136j
+10000            0.0021622-0.058964j       0.313874+0.0140132j
+2507500     -0.000479817+0.00114465j         1.28487-0.151421j
+5005000     0.000102161-0.000539365j        0.815177-0.207144j
+7502500      0.000863846-0.00198034j        0.765796-0.179227j
+10000000      0.00128952-0.00351373j        0.744764-0.181457j
 ```
+
+
+Write a s1p file to stdout.
 
 
 ```
 $ python3 nanocli.py -1 --db --points 5
 # MHz S DB R 50
-0.01           -24.407   -87.834
-2.5075         -54.816   122.399
-5.005          -64.645   -78.646
-7.5025         -53.510   -63.576
-10             -48.933   -68.541
+0.01           -24.549   -87.876
+2.5075         -59.515   108.592
+5.005          -65.337   -74.803
+7.5025         -53.330   -64.297
+10             -48.587   -69.380
 ```
 
 
 Passing the --points option above
 forces an interpolation of the calibration data
-to the new frequency sweep.  If the option was not given
-the 1001 frequencies used for calibration would be swept.
+to the range of the new frequency sweep.  If this option was not given
+the original 1001 frequencies used for calibration would be swept
+without interpolation.
 
 ## Interpolation of Calibration Data
 
 By default, no interpolation is performed
-on your calibration data.  The range for the
-frequency sweep is taken from the calibration
-file.  
+on your calibration data mean making a measurement.  
+The frequencies for the sweep is taken directly from 
+the calibration file.  
 
-However if a different frequency range is
-set on the command line from the calibration
-data, then the calibration data will be interpolated
+However if the range of the frequency sweep
+is changed on the command line from that given 
+in the calibration file,
+the calibration data will be interpolated
 to the new range.
 
-Remember the frequency range cannot be changed
-when doing calibration.  All calibration data
-in a single calibration file must be for the same range.
+Remember, the frequency range cannot be changed
+when doing calibration.  But during a measurement it can.
+All calibration data within a calibration file 
+must have same frequency sweep range.
 
 ## Measurement Report Formats
 
 All measurement output from the utility is
-written to the terminal.
+written to the terminal (using stdout).
 By default the output will be formatted
 for a s2p touchstone file.  If the --one option
-is passed on the command line the output will instead be
-written in s1p format.
+is passed on the command line the output will be
+formatted for a s1p touchstone file.
 
 Passing the --text option writes the output
 in a format compatible with numpy's loadtxt(arr, dtype='c16')

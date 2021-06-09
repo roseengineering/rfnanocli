@@ -28,7 +28,7 @@ in touchstone format.
 In addition the utility provides its own error correction.
 It does not use the onboard calibrations features
 of either nano.
-You must calibrate your nano separately using this utility.
+You must calibrate your nano separately to use this utility.
 The calibration data is stored in a npz file on your computer.
 
 In order to perform a measure sweep on the original nano, the
@@ -47,8 +47,8 @@ sweep measurements.  This is the same SOLT
 calibration method that you use to calibrate the nano from its UI.
 
 To calibrate the nano using the utility, first initialize the
-calibration with your frequency sweep.  This
-sweep will be written to your calibration file.  If the calibration
+calibration file with your frequency sweep.
+If the calibration
 file already exists, it will be overwritten.  By default
 the name of the file is cal.npz.
 
@@ -62,7 +62,6 @@ First pip install the required python libraries using:
 
 {run("pip install -r requirements.txt")}
 
-Then run the utility using python3.
 
 ## Command Line Usage
 
@@ -78,7 +77,7 @@ frequency sweep.
 {run("python3 nanocli.py --init --start 10e3 --stop 10e6 --points 1001")}
 {run("python3 nanocli.py --details")}
 
-Next perform SOLT calibration.
+Perform the SOLT calibrations.
 
 ```
 $ python3 nanocli.py --open
@@ -91,39 +90,51 @@ $ python3 nanocli.py --details
 Now run a sweep.  
 
 {run("python3 nanocli.py --points 5")}
+
+Return the results in dB.
+
 {run("python3 nanocli.py --db --points 5")}
+
+Output measurements in a format that can be read by numpy.
+
 {run("python3 nanocli.py --text --points 5")}
+
+Write a s1p file to stdout.
+
 {run("python3 nanocli.py -1 --db --points 5")}
 
 Passing the --points option above
 forces an interpolation of the calibration data
-to the new frequency sweep.  If the option was not given
-the 1001 frequencies used for calibration would be swept.
+to the range of the new frequency sweep.  If this option was not given
+the original 1001 frequencies used for calibration would be swept
+without interpolation.
 
 ## Interpolation of Calibration Data
 
 By default, no interpolation is performed
-on your calibration data.  The range for the
-frequency sweep is taken from the calibration
-file.  
+on your calibration data mean making a measurement.  
+The frequencies for the sweep is taken directly from 
+the calibration file.  
 
-However if a different frequency range is
-set on the command line from the calibration
-data, then the calibration data will be interpolated
+However if the range of the frequency sweep
+is changed on the command line from that given 
+in the calibration file,
+the calibration data will be interpolated
 to the new range.
 
-Remember the frequency range cannot be changed
-when doing calibration.  All calibration data
-in a single calibration file must be for the same range.
+Remember, the frequency range cannot be changed
+when doing calibration.  But during a measurement it can.
+All calibration data within a calibration file 
+must have same frequency sweep range.
 
 ## Measurement Report Formats
 
 All measurement output from the utility is
-written to the terminal.
+written to the terminal (using stdout).
 By default the output will be formatted
 for a s2p touchstone file.  If the --one option
-is passed on the command line the output will instead be
-written in s1p format.
+is passed on the command line the output will be
+formatted for a s1p touchstone file.
 
 Passing the --text option writes the output
 in a format compatible with numpy's loadtxt(arr, dtype='c16')
