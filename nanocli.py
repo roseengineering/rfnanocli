@@ -5,14 +5,19 @@ from serial.tools import list_ports
 from struct import pack, unpack_from
 from time import sleep
 
+# defaults
+
 FSTART = 10e3
 FSTOP = 10e6
 POINTS = 101
 SAMPLES = 2
+CALFILE = 'cal.npz'
  
 FORMAT_TEXT = ' {:25.6g} {:25.6g}'
 FORMAT_DB   = ' {:11.3f} {:9.3f}'
 FORMAT_MAG  = ' {:14.5g} {:9.3f}'
+
+# supported calibrations
 
 calibrations = [ 'open', 'short', 'load', 'thru' ]
 
@@ -21,19 +26,19 @@ def parse_args():
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument('command', metavar='command', nargs='*', help='command')
-    parser.add_argument('-f', '--file', default='cal.npz', help='calibration file')
+    # calibration flags
+    parser.add_argument('-i', '--init', action='store_true', help='initialize calibration')
     parser.add_argument('-o', '--open', action='store_true', help='open calibration')
     parser.add_argument('-s', '--short', action='store_true', help='short calibration')
     parser.add_argument('-l', '--load', action='store_true', help='load calibration')
     parser.add_argument('-t', '--thru', action='store_true', help='thru calibration')
-    parser.add_argument('-i', '--init', action='store_true', help='initialize calibration')
+    # reporting flags
     parser.add_argument('-d', '--details',  action='store_true', help='show calibration details')
     parser.add_argument('-r', '--raw', action='store_true', help='do not apply calibration')
-    # output flags
     parser.add_argument('-1', '--one',  action='store_true', help='show s1p')
     parser.add_argument('--db', action='store_true', help='show in dB')
-    parser.add_argument('--text', action='store_true', help='send output to text file')
-    # value options
+    # value options 
+    parser.add_argument('-f', '--filename', default=CALFILE, help='calibration file')
     parser.add_argument('-n', '--samples', default=SAMPLES, type=int, help='samples per frequency')
     parser.add_argument('--start', type=float, help='start frequency (Hz)')
     parser.add_argument('--stop', type=float, help='stop frequency (Hz)')
@@ -66,7 +71,7 @@ def nanovna(dev):
                 break
         return result.strip()
 
-    def scan(start, stop, points, samples):
+    def sweep(start, stop, points, samples):
         assert(points > 1 and points <= 101)
         freq = np.linspace(start, stop, points)
         data = np.zeros((points, 4))
@@ -88,10 +93,13 @@ def nanovna(dev):
         data = data[:,0::2] + 1j * data[:,1::2]
         return freq, data / samples
 
-    return scan
+    return sweep
 
 
 def nanovnav2(dev):
+
+    # most of this nanovnav2 code was taken from nanovna-saver
+
     WRITE_SLEEP = 0.05
 
     CMD_READFIFO = 0x18
@@ -137,7 +145,7 @@ def nanovnav2(dev):
         cmd = pack("<BBB", CMD_WRITE, ADDR_RAW_SAMPLES_MODE, 2)
         send(ser, cmd)
 
-    def scan(start, stop, points, samples):
+    def sweep(start, stop, points, samples):
         assert(points > 1 and points <= 1024)
         freq = np.linspace(start, stop, points)
         data = np.zeros((points, 2), dtype=complex)
@@ -169,7 +177,7 @@ def nanovnav2(dev):
         data = data / samples
         return freq, data
 
-    return scan
+    return sweep
 
 
 ###############################
@@ -191,12 +199,14 @@ def getport():
 
 
 def calibrate(cal):
+    # see Rytting, "Network analyzer error models and calibration methods", HP 1998
     gms = cal.get("short", -1)
     gmo = cal.get("open", 1)
     gml = cal.get("load", 0)
     gmu = cal.get("thru", 0)
     gmu21 = cal.get("thru21", 1) # 0 causes nan results
     d = {}
+    # e30 assumed to be zero
     d['e00'] = gml
     d['e11'] = (gmo + gms - 2 * gml) / (gmo - gms)
     d['de'] = (2 * gmo * gms - gml * gms - gml * gmo) / (gmo - gms) 
@@ -204,6 +214,15 @@ def calibrate(cal):
     d['e22'] = ((gmu - gml) / (gmu * d['e11'] - d['de']))
     d['e10e32'] = gmu21 * (1 - d['e11'] * d['e22'])
     return d
+
+
+def cal_correct(cal, data):
+    d = calibrate(cal)
+    S11M = data[:,0]
+    S21M = data[:,1]
+    S11 = (S11M - d['e00']) / (S11M * d['e11'] - d['de'])
+    S21 = S21M / d['e10e32'] * d['e10e01'] / (d['e11'] * S11M - d['de'])
+    return np.array([ S11, S21 ]).T
 
 
 def cal_interpolate(cal, start, stop, points):
@@ -233,21 +252,12 @@ def cal_load(filename):
     return dict(npzfile)
 
 
-def cal_correct(cal, data):
-    d = calibrate(cal)
-    S11M = data[:,0]
-    S21M = data[:,1]
-    S11 = (S11M - d['e00']) / (S11M * d['e11'] - d['de'])
-    S21 = S21M / d['e10e32'] * d['e10e01'] / (d['e11'] * S11M - d['de'])
-    return np.array([ S11, S21 ]).T
-
-
 def measure(cal, samples):
     start = cal['start']
     stop = cal['stop']
     points = cal['points']
-    scan = getport()
-    freq, data = scan(start, stop, points, samples)
+    sweep = getport()
+    freq, data = sweep(start, stop, points, samples)
     return freq, data
 
 
@@ -282,21 +292,34 @@ def show_touchstone(freq, data):
             print('{}{}{}{}'.format(one, two, two, one))
 
 
+def sweep(start=None, stop=None, points=None, filename=CALFILE, samples=SAMPLES):
+    cal = cal_load(filename)
+    if start or stop or points:
+        cal_interpolate(cal, start, stop, points)
+    freq, data = measure(cal, samples)
+    data = cal_correct(cal, data)
+    return freq, data
+
+
 def main():
     # which calibration to run
     unit = [ d for d in calibrations if args.__dict__.get(d) ]
-    if args.init and unit:
-        raise RuntimeError('Cannot both intialize and calibrate.')
+
+    # error check
     if len(unit) > 1:
         raise RuntimeError('Cannot do more than one calibration at a time.')
+    if unit and args.init:
+        raise RuntimeError('Cannot both intialize and calibrate.')
+    if unit and (args.start or args.stop or args.points):
+        raise RuntimeError('Cannot interpolate the calibration.')
 
     # initialize calibration
     if args.init:
-        cal_init(args.file, args.start, args.stop, args.points)
+        cal_init(args.filename, args.start, args.stop, args.points)
         return
 
     # load calibration file
-    cal = cal_load(args.file)
+    cal = cal_load(args.filename)
 
     # show details
     if args.details:
@@ -305,8 +328,6 @@ def main():
 
     # interpolate
     if args.start or args.stop or args.points:
-        if unit:
-            raise RuntimeError('Cannot both interpolate and calibrate.')
         cal_interpolate(cal, args.start, args.stop, args.points)
 
     # measure
@@ -317,18 +338,15 @@ def main():
         cal[unit[0]] = data[:,0] 
         if unit[0] == 'thru':
             cal['thru21'] = data[:,1]
-        np.savez(args.file, **cal)
+        np.savez(args.filename, **cal)
         return
 
-    # measure and apply correction
+    # apply correction
     if not args.raw: 
         data = cal_correct(cal, data)
 
     # write output
-    if args.text:
-        show_text(freq, data)
-    else:
-        show_touchstone(freq, data) 
+    show_touchstone(freq, data) 
 
 
 if __name__ == '__main__':

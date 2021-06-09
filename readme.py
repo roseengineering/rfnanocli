@@ -20,7 +20,7 @@ print(f"""\
 ## Introduction
 
 Nanocli is a utility for running measurement
-sweeps off the original NanoVNA or the new NanoVNAv2
+sweeps off the original NanoVNA or the new SAA2 (NanoVNAv2)
 from the command line.
 The sweep results are printed to the terminal
 in touchstone format.
@@ -31,64 +31,7 @@ of either nano.
 You must calibrate your nano separately to use this utility.
 The calibration data is stored in a npz file on your computer.
 
-In order to perform a measurement sweep on the original nano, the
-utility first turns calibration off on the device.  Once the
-measurement is made, the utility will turn calibration back on.
-It is recommended to use the same frequency sweep
-with the original nano UI as well as with nanocli to
-avoid UI interpolation issues.
-For the v2 nano, since its USB connection is always uncorrected
-its UI is unaffected.
-
-## Reason for This Utility
-
-I needed the ability to perform a calibrated measurement from the terminal
-or from a Jupyter Notebook, for example.  The original nano
-had this ability through its (usb) serial interface and its "data" command.
-However the new NanoVNAv2 does not.  It uses a special binary
-protocol. Its measurements over the usb interface are uncalibrated. 
-Lastly and probably most importantly you cannot control its UI
-over usb.  So no more computer remote control visual operation of the
-device like I was able to do with the original nano.
-As a result this utility is intended to unify the two nanos to satisfy my above need
-and do my remote control in Jupyter instead.
-
-## To Do
-
-Add a python interface so the utility can be called programmaticaly say in
-a ipython notebook.
-
-## Calibration
-
-The utility uses the 12-term error model to correct
-sweep measurements.  This is the same SOLT
-calibration method that you use to calibrate the nano from its UI.
-
-To calibrate the nano using the utility, first initialize the
-calibration file with your frequency sweep.
-If the calibration
-file already exists, it will be overwritten.  By default
-the name of the file is cal.npz.
-
-Once intialized the frequency sweep for a given calibration file is fixed.
-All calibrations will use the same sweep range set in the calibration
-file.  This is because all calibration data within a single calibration file
-must have measurements for the sample set of frequencies.
-
-## How to Install
-
-First pip install the required python libraries using:
-
-{run("pip install -r requirements.txt")}
-
-
-## Command Line Usage
-
-The utility's command line usage is as follows:
-
-{run("python3 nanocli.py --help")}
-
-## Utility Calibration
+## Walkthrough
 
 First initialize the calibration file, setting the 
 frequency sweep.
@@ -117,10 +60,6 @@ Return the results in dB.
 
 {run("python3 nanocli.py --db --points 5")}
 
-Output measurements in a format that can be read by numpy.
-
-{run("python3 nanocli.py --text --points 5")}
-
 Write a s1p file to stdout.
 
 {run("python3 nanocli.py -1 --db --points 5")}
@@ -130,6 +69,37 @@ forces an interpolation of the calibration data
 to the frequencies of the new sweep.  If this option was not given
 the original 1001 frequencies used for calibration would be swept
 and without any interpolation of the calibration data.
+
+## Calibration
+
+The utility uses the (incomplete, one path) 12-term error model to correct
+sweep measurements.  This is the same SOLT
+calibration method that you use to calibrate the nano from its UI.
+
+To calibrate the nano using the utility, first initialize the
+calibration file with your frequency sweep.
+If the calibration
+file already exists, it will be overwritten.  By default
+the name of the file is cal.npz.
+
+Once intialized the frequency sweep for a given calibration file is fixed.
+All calibrations will use the same sweep range set in the calibration
+file.  This is because all calibration data within a single calibration file
+must have measurements for the same set of frequencies.
+
+## How to Install
+
+First pip install the required python libraries using:
+
+{run("pip install -r requirements.txt")}
+
+
+## Command Line Usage
+
+The utility's command line usage is as follows:
+
+{run("python3 nanocli.py --help")}
+
 
 ## Interpolation of Calibration Data
 
@@ -157,9 +127,45 @@ for a s2p touchstone file.  If the --one option
 is passed on the command line the output will be
 formatted for a s1p touchstone file.
 
-Passing the --text option writes the output
-in a format compatible with numpy's loadtxt(fid, dtype='c16')
-function.
+## Python Interface
+
+Import this library using import nanocli.  There is only one function
+provided called sweep.  It returns a (freq, data) tuple for the result.
+freq is an array of frequencies points and data is a 2xN array
+of s11 and s21 calibration corrected measurements.
+
+The interface for sweep is as follows.  Changing the range
+for the frequency sweep by passing values for
+start, stop or points will force an interpolation of the calibration
+data.
+
+```python
+sweep(start=None, stop=None, points=None, filename='cal.npz', samples=2)
+```
+
+## Reason for This Utility
+
+I needed the ability to perform a calibrated measurement from the terminal
+or from a Jupyter Notebook, for example.  The original nano
+had this ability through its (USB) serial interface and its "data" command.
+However the new SAA2 does not.  It uses a special binary
+protocol. Its measurements over the USB interface are also uncalibrated unlike the original nano. 
+Lastly and probably, most importantly, you cannot control its UI
+over USB.  So no more computer remote control visual operation of the
+device like I was able to do with the original nano.
+As a result this utility is intended to unify the two nanos to satisfy my above need
+and do my remote control in Jupyter instead.
+
+## Implementation Notes
+
+In order to perform a measurement sweep on the original nano, the
+utility first turns calibration off on the device.  Once the
+measurement is made, the utility will turn calibration back on.
+It is recommended to use the same frequency sweep
+with the original nano UI as well as with nanocli to
+avoid UI interpolation issues.
+For the SAA2 nano, since its USB connection is always uncorrected
+its UI is unaffected.
 
 """)
 
