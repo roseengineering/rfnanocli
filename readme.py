@@ -40,6 +40,24 @@ avoid UI interpolation issues.
 For the v2 nano, since its USB connection is always uncorrected
 its UI is unaffected.
 
+## Reason for This Utility
+
+I needed the ability to perform a calibrated measurement from the terminal
+or a Jupyter Notebook, for example.  The original nano
+had this ability through its (usb) serial interface and its "data" command.
+However the new NanoVNAv2 does not.  It uses a special binary
+protocol. Its measurements over the usb interface are uncalibrated. 
+Lastly and probably most importantly you cannot control its UI
+over usb.  So no more computer remote control visual operation of the
+device like I was able with the original nano.
+As a result this utility is intended to unify the two nanos to satisfy my above need
+and do my remote control in Jupyter.
+
+## To Do
+
+Add a python interface so the utility can be called programmaticaly say in
+a ipython notebook.
+
 ## Calibration
 
 The utility uses the 12-term error model to correct
@@ -54,7 +72,8 @@ the name of the file is cal.npz.
 
 The frequency sweep for a given calibration file is always fixed.  All
 subsequent calibrations will use the same sweep set in the calibration
-file.
+file.  All calibration data within each calibration file
+must have same frequency sweep range.
 
 ## How to Install
 
@@ -119,16 +138,15 @@ on your calibration data when making a measurement.
 The frequencies for the measurement sweep are taken directly from 
 the calibration file.  
 
-However if the range of the frequency sweep
+If the range of the frequency sweep
 is changed on the command line from that given 
 in the calibration file,
 the calibration data will be interpolated
 to the new range.
 
 Remember, the frequency range cannot be changed
-when doing calibration.  But during a measurement it can.
-All calibration data within a calibration file 
-must have same frequency sweep range.
+when doing calibration.  But when making a measurement
+sweep it can.
 
 ## Measurement Report Formats
 

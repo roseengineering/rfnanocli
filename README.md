@@ -23,6 +23,24 @@ avoid UI interpolation issues.
 For the v2 nano, since its USB connection is always uncorrected
 its UI is unaffected.
 
+## Reason for This Utility
+
+I needed the ability to perform a calibrated measurement from the terminal
+or a Jupyter Notebook, for example.  The original nano
+had this ability through its (usb) serial interface and its "data" command.
+However the new NanoVNAv2 does not.  It uses a special binary
+protocol. Its measurements over the usb interface are uncalibrated. 
+Lastly and probably most importantly you cannot control its UI
+over usb.  So no more computer remote control visual operation of the
+device like I was able with the original nano.
+As a result this utility is intended to unify the two nanos to satisfy my above need
+and do my remote control in Jupyter.
+
+## To Do
+
+Add a python interface so the utility can be called programmaticaly say in
+a ipython notebook.
+
 ## Calibration
 
 The utility uses the 12-term error model to correct
@@ -37,7 +55,8 @@ the name of the file is cal.npz.
 
 The frequency sweep for a given calibration file is always fixed.  All
 subsequent calibrations will use the same sweep set in the calibration
-file.
+file.  All calibration data within each calibration file
+must have same frequency sweep range.
 
 ## How to Install
 
@@ -127,11 +146,11 @@ Now run a sweep.
 ```
 $ python3 nanocli.py --points 5
 # MHz S MA R 50
-0.01             0.059683   -87.695        0.31431     2.556        0.31431     2.556       0.059683   -87.695
-2.5075         0.00096361   102.976         1.2786    -7.301         1.2786    -7.301     0.00096361   102.976
-5.005          0.00066367   -64.925        0.83887   -14.124        0.83887   -14.124     0.00066367   -64.925
-7.5025          0.0021482   -62.336        0.78603   -13.099        0.78603   -13.099      0.0021482   -62.336
-10              0.0036608   -67.737        0.76591   -13.677        0.76591   -13.677      0.0036608   -67.737
+0.01             0.060905   -88.019        0.31502     2.526        0.31502     2.526       0.060905   -88.019
+2.5075          0.0018989   110.867         1.3793    -1.295         1.3793    -1.295      0.0018989   110.867
+5.005          0.00066174   -83.923        0.85975   -15.381        0.85975   -15.381     0.00066174   -83.923
+7.5025          0.0020185   -61.962        0.79028   -13.751        0.79028   -13.751      0.0020185   -61.962
+10              0.0035675   -66.585         0.7681   -14.040         0.7681   -14.040      0.0035675   -66.585
 ```
 
 
@@ -141,11 +160,11 @@ Return the results in dB.
 ```
 $ python3 nanocli.py --db --points 5
 # MHz S DB R 50
-0.01           -24.465   -87.838     -10.052     2.533     -10.052     2.533     -24.465   -87.838
-2.5075         -58.781    93.881       2.146    -7.308       2.146    -7.308     -58.781    93.881
-5.005          -64.830   -76.546      -1.526   -14.117      -1.526   -14.117     -64.830   -76.546
-7.5025         -54.113   -60.371      -2.092   -13.096      -2.092   -13.096     -54.113   -60.371
-10             -48.687   -70.297      -2.313   -13.660      -2.313   -13.660     -48.687   -70.297
+0.01           -24.336   -88.044     -10.048     2.433     -10.048     2.433     -24.336   -88.044
+2.5075         -57.343   117.047       2.800    -1.312       2.800    -1.312     -57.343   117.047
+5.005          -64.464   -78.936      -1.315   -15.388      -1.315   -15.388     -64.464   -78.936
+7.5025         -53.585   -62.200      -2.046   -13.746      -2.046   -13.746     -53.585   -62.200
+10             -49.110   -67.274      -2.292   -14.046      -2.292   -14.046     -49.110   -67.274
 ```
 
 
@@ -154,11 +173,11 @@ Output measurements in a format that can be read by numpy.
 
 ```
 $ python3 nanocli.py --text --points 5
-10000           0.00188911-0.058907j       0.314756+0.0139893j
-2507500    -0.000782249+0.000917931j         1.27114-0.162971j
-5005000     0.000225089-0.000457621j        0.813358-0.204851j
-7502500        0.0010605-0.00184693j        0.765453-0.178152j
-10000000      0.00141787-0.00341474j        0.744533-0.180959j
+10000            0.00205605-0.06152j       0.314269+0.0130586j
+2507500     -0.000884561+0.00163324j        1.38181-0.0309735j
+5005000    -3.73298e-06-0.000457304j         0.82876-0.228349j
+7502500      0.000973338-0.00172366j        0.767329-0.187793j
+10000000       0.00123701-0.0032242j        0.744781-0.186493j
 ```
 
 
@@ -168,11 +187,11 @@ Write a s1p file to stdout.
 ```
 $ python3 nanocli.py -1 --db --points 5
 # MHz S DB R 50
-0.01           -24.593   -88.124
-2.5075         -60.847   105.470
-5.005          -64.684   -69.136
-7.5025         -53.500   -60.411
-10             -48.870   -69.146
+0.01           -24.231   -88.013
+2.5075         -55.973   126.404
+5.005          -65.442   -83.531
+7.5025         -53.360   -63.874
+10             -49.104   -68.570
 ```
 
 
@@ -189,16 +208,15 @@ on your calibration data when making a measurement.
 The frequencies for the measurement sweep are taken directly from 
 the calibration file.  
 
-However if the range of the frequency sweep
+If the range of the frequency sweep
 is changed on the command line from that given 
 in the calibration file,
 the calibration data will be interpolated
 to the new range.
 
 Remember, the frequency range cannot be changed
-when doing calibration.  But during a measurement it can.
-All calibration data within a calibration file 
-must have same frequency sweep range.
+when doing calibration.  But when making a measurement
+sweep it can.
 
 ## Measurement Report Formats
 
