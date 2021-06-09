@@ -80,8 +80,8 @@ Print details on the calibration file.
 
 {run("python3 nanocli.py --details")}
 
-The calibration file has no calibration data.
-Next perform the SOLT calibrations.
+According to the --details option, the calibration file currently has no calibration data.
+So lets perform the SOLT calibrations.
 
 ```
 $ python3 nanocli.py --open
@@ -115,8 +115,8 @@ without interpolation.
 ## Interpolation of Calibration Data
 
 By default, no interpolation is performed
-on your calibration data mean making a measurement.  
-The frequencies for the sweep is taken directly from 
+on your calibration data when making a measurement.  
+The frequencies for the measurement sweep is taken directly from 
 the calibration file.  
 
 However if the range of the frequency sweep
