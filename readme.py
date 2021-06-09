@@ -70,10 +70,10 @@ If the calibration
 file already exists, it will be overwritten.  By default
 the name of the file is cal.npz.
 
-The frequency sweep for a given calibration file is always fixed.  All
-subsequent calibrations will use the same sweep set in the calibration
-file.  All calibration data within each calibration file
-must have same frequency sweep range.
+Once intialized the frequency sweep for a given calibration file is fixed.
+All calibrations will use the same sweep range set in the calibration
+file.  This is because all calibration data within a single calibration file
+must have measurements for the sample set of frequencies.
 
 ## How to Install
 
