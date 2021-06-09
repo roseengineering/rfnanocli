@@ -108,7 +108,7 @@ Write a s1p file to stdout.
 
 Passing the --points option above
 forces an interpolation of the calibration data
-to the range of the new frequency sweep.  If this option was not given
+to the frequencies of the new sweep.  If this option was not given
 the original 1001 frequencies used for calibration would be swept
 without interpolation.
 
