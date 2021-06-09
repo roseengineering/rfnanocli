@@ -14,7 +14,7 @@ of either nano.
 You must calibrate your nano separately to use this utility.
 The calibration data is stored in a npz file on your computer.
 
-In order to perform a measure sweep on the original nano, the
+In order to perform a measurement sweep on the original nano, the
 utility first turns calibration off on the device.  Once the
 measurement is made, the utility will turn calibration back on.
 It is recommended to use the same frequency sweep
