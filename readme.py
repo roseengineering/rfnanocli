@@ -140,7 +140,7 @@ is passed on the command line the output will be
 formatted for a s1p touchstone file.
 
 Passing the --text option writes the output
-in a format compatible with numpy's loadtxt(arr, dtype='c16')
+in a format compatible with numpy's loadtxt(fid, dtype='c16')
 function.
 
 """)
