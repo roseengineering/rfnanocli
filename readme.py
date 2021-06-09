@@ -43,13 +43,13 @@ its UI is unaffected.
 ## Reason for This Utility
 
 I needed the ability to perform a calibrated measurement from the terminal
-or a Jupyter Notebook, for example.  The original nano
+or from a Jupyter Notebook, for example.  The original nano
 had this ability through its (usb) serial interface and its "data" command.
 However the new NanoVNAv2 does not.  It uses a special binary
 protocol. Its measurements over the usb interface are uncalibrated. 
 Lastly and probably most importantly you cannot control its UI
 over usb.  So no more computer remote control visual operation of the
-device like I was able with the original nano.
+device like I was able to do with the original nano.
 As a result this utility is intended to unify the two nanos to satisfy my above need
 and do my remote control in Jupyter.
 
