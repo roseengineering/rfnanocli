@@ -3,7 +3,7 @@
 ## Introduction
 
 Nanocli is a utility for running measurement
-sweeps off the original NanoVNA or the new NanoVNAv2
+sweeps off the original NanoVNA or the new SAA2 (NanoVNAv2)
 from the command line.
 The sweep results are printed to the terminal
 in touchstone format.
@@ -53,11 +53,11 @@ Now run a sweep.
 ```
 $ python3 nanocli.py --points 5
 # MHz S MA R 50
-0.01              0.05901   -87.927        0.31477     2.614        0.31477     2.614        0.05901   -87.927
-2.5075         0.00070162    86.430          1.273    -7.497          1.273    -7.497     0.00070162    86.430
-5.005          0.00065939   -49.060        0.83778   -14.095        0.83778   -14.095     0.00065939   -49.060
-7.5025          0.0021224   -53.592        0.78556   -13.086        0.78556   -13.086      0.0021224   -53.592
-10               0.003658   -63.511        0.76585   -13.663        0.76585   -13.663       0.003658   -63.511
+0.01             0.059836   -88.048        0.31506     2.516        0.31506     2.516       0.059836   -88.048
+2.5075         0.00081466    68.548         1.2692    -7.618         1.2692    -7.618     0.00081466    68.548
+5.005          0.00069985   -57.973        0.83721   -14.026        0.83721   -14.026     0.00069985   -57.973
+7.5025          0.0020967   -61.466        0.78557   -13.063        0.78557   -13.063      0.0020967   -61.466
+10              0.0036456   -64.714        0.76549   -13.649        0.76549   -13.649      0.0036456   -64.714
 ```
 
 
@@ -67,11 +67,11 @@ Return the results in dB.
 ```
 $ python3 nanocli.py --db --points 5
 # MHz S DB R 50
-0.01           -24.453   -87.891     -10.047     2.506     -10.047     2.506     -24.453   -87.891
-2.5075         -62.326    98.226       2.109    -7.507       2.109    -7.507     -62.326    98.226
-5.005          -63.988   -52.957      -1.536   -14.096      -1.536   -14.096     -63.988   -52.957
-7.5025         -53.176   -55.609      -2.098   -13.090      -2.098   -13.090     -53.176   -55.609
-10             -48.724   -65.999      -2.319   -13.659      -2.319   -13.659     -48.724   -65.999
+0.01           -24.549   -88.232     -10.034     2.608     -10.034     2.608     -24.549   -88.232
+2.5075         -58.740   125.094       2.095    -7.621       2.095    -7.621     -58.740   125.094
+5.005          -64.057   -49.753      -1.544   -14.049      -1.544   -14.049     -64.057   -49.753
+7.5025         -53.286   -59.792      -2.098   -13.057      -2.098   -13.057     -53.286   -59.792
+10             -48.636   -66.602      -2.318   -13.647      -2.318   -13.647     -48.636   -66.602
 ```
 
 
@@ -81,11 +81,11 @@ Write a s1p file to stdout.
 ```
 $ python3 nanocli.py -1 --db --points 5
 # MHz S DB R 50
-0.01           -24.482   -88.195
-2.5075         -60.110    80.115
-5.005          -62.184   -64.882
-7.5025         -53.174   -56.031
-10             -48.637   -64.758
+0.01           -24.569   -88.311
+2.5075         -62.950    94.823
+5.005          -65.083   -52.563
+7.5025         -53.288   -57.013
+10             -48.591   -64.917
 ```
 
 
@@ -209,7 +209,7 @@ sweep(start=None, stop=None, points=None, filename='cal.npz', samples=2)
 I needed the ability to perform a calibrated measurement from the terminal
 or from a Jupyter Notebook, for example.  The original nano
 had this ability through its (USB) serial interface and its "data" command.
-However the new NanoVNAv2 does not.  It uses a special binary
+However the new SAA2 does not.  It uses a special binary
 protocol. Its measurements over the USB interface are also uncalibrated unlike the original nano. 
 Lastly and probably, most importantly, you cannot control its UI
 over USB.  So no more computer remote control visual operation of the
@@ -225,7 +225,7 @@ measurement is made, the utility will turn calibration back on.
 It is recommended to use the same frequency sweep
 with the original nano UI as well as with nanocli to
 avoid UI interpolation issues.
-For the v2 nano, since its USB connection is always uncorrected
+For the SAA2 nano, since its USB connection is always uncorrected
 its UI is unaffected.
 
 
