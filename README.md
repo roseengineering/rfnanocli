@@ -53,11 +53,11 @@ Now run a sweep.
 ```
 $ python3 nanocli.py --points 5
 # MHz S MA R 50
-0.01             0.059836   -88.048        0.31506     2.516        0.31506     2.516       0.059836   -88.048
-2.5075         0.00081466    68.548         1.2692    -7.618         1.2692    -7.618     0.00081466    68.548
-5.005          0.00069985   -57.973        0.83721   -14.026        0.83721   -14.026     0.00069985   -57.973
-7.5025          0.0020967   -61.466        0.78557   -13.063        0.78557   -13.063      0.0020967   -61.466
-10              0.0036456   -64.714        0.76549   -13.649        0.76549   -13.649      0.0036456   -64.714
+0.01             0.059636   -88.077        0.31495     2.503        0.31495     2.503       0.059636   -88.077
+2.5075          0.0010447    94.334           1.27    -7.637           1.27    -7.637      0.0010447    94.334
+5.005           0.0006367   -54.859        0.83741   -14.022        0.83741   -14.022      0.0006367   -54.859
+7.5025          0.0022184   -59.497        0.78548   -13.062        0.78548   -13.062      0.0022184   -59.497
+10              0.0036002   -63.069        0.76582   -13.640        0.76582   -13.640      0.0036002   -63.069
 ```
 
 
@@ -67,11 +67,11 @@ Return the results in dB.
 ```
 $ python3 nanocli.py --db --points 5
 # MHz S DB R 50
-0.01           -24.549   -88.232     -10.034     2.608     -10.034     2.608     -24.549   -88.232
-2.5075         -58.740   125.094       2.095    -7.621       2.095    -7.621     -58.740   125.094
-5.005          -64.057   -49.753      -1.544   -14.049      -1.544   -14.049     -64.057   -49.753
-7.5025         -53.286   -59.792      -2.098   -13.057      -2.098   -13.057     -53.286   -59.792
-10             -48.636   -66.602      -2.318   -13.647      -2.318   -13.647     -48.636   -66.602
+0.01           -24.398   -87.734     -10.048     2.518     -10.048     2.518     -24.398   -87.734
+2.5075         -62.061    82.953       2.085    -7.632       2.085    -7.632     -62.061    82.953
+5.005          -64.338   -52.047      -1.543   -14.036      -1.543   -14.036     -64.338   -52.047
+7.5025         -53.468   -56.520      -2.098   -13.065      -2.098   -13.065     -53.468   -56.520
+10             -48.353   -65.164      -2.317   -13.640      -2.317   -13.640     -48.353   -65.164
 ```
 
 
@@ -81,11 +81,11 @@ Write a s1p file to stdout.
 ```
 $ python3 nanocli.py -1 --db --points 5
 # MHz S DB R 50
-0.01           -24.569   -88.311
-2.5075         -62.950    94.823
-5.005          -65.083   -52.563
-7.5025         -53.288   -57.013
-10             -48.591   -64.917
+0.01           -24.445   -88.147
+2.5075         -62.753    95.054
+5.005          -64.678   -62.904
+7.5025         -54.025   -58.101
+10             -48.959   -65.031
 ```
 
 
@@ -94,23 +94,6 @@ forces an interpolation of the calibration data
 to the frequencies of the new sweep.  If this option was not given
 the original 1001 frequencies used for calibration would be swept
 and without any interpolation of the calibration data.
-
-## Calibration
-
-The utility uses the (incomplete, one path) 12-term error model to correct
-sweep measurements.  This is the same SOLT
-calibration method that you use to calibrate the nano from its UI.
-
-To calibrate the nano using the utility, first initialize the
-calibration file with your frequency sweep.
-If the calibration
-file already exists, it will be overwritten.  By default
-the name of the file is cal.npz.
-
-Once intialized the frequency sweep for a given calibration file is fixed.
-All calibrations will use the same sweep range set in the calibration
-file.  This is because all calibration data within a single calibration file
-must have measurements for the same set of frequencies.
 
 ## How to Install
 
@@ -161,6 +144,23 @@ optional arguments:
 ```
 
 
+
+## On Calibration
+
+The utility uses the (incomplete, one path) 12-term error model to correct
+sweep measurements.  This is the same SOLT
+calibration method that you use to calibrate the nano from its UI.
+
+To calibrate the nano using the utility, first initialize the
+calibration file with your frequency sweep.
+If the calibration
+file already exists, it will be overwritten.  By default
+the name of the file is cal.npz.
+
+Once intialized the frequency sweep for a given calibration file is fixed.
+All calibrations will use the same sweep range set in the calibration
+file.  This is because all calibration data within a single calibration file
+must have measurements for the same set of frequencies.
 
 ## Interpolation of Calibration Data
 

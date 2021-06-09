@@ -70,7 +70,21 @@ to the frequencies of the new sweep.  If this option was not given
 the original 1001 frequencies used for calibration would be swept
 and without any interpolation of the calibration data.
 
-## Calibration
+## How to Install
+
+First pip install the required python libraries using:
+
+{run("pip install -r requirements.txt")}
+
+
+## Command Line Usage
+
+The utility's command line usage is as follows:
+
+{run("python3 nanocli.py --help")}
+
+
+## On Calibration
 
 The utility uses the (incomplete, one path) 12-term error model to correct
 sweep measurements.  This is the same SOLT
@@ -86,20 +100,6 @@ Once intialized the frequency sweep for a given calibration file is fixed.
 All calibrations will use the same sweep range set in the calibration
 file.  This is because all calibration data within a single calibration file
 must have measurements for the same set of frequencies.
-
-## How to Install
-
-First pip install the required python libraries using:
-
-{run("pip install -r requirements.txt")}
-
-
-## Command Line Usage
-
-The utility's command line usage is as follows:
-
-{run("python3 nanocli.py --help")}
-
 
 ## Interpolation of Calibration Data
 
