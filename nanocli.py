@@ -2,7 +2,7 @@
 import numpy as np
 import serial
 from serial.tools import list_ports
-from struct import pack, unpack_from
+from struct import pack, unpack, unpack_from
 from time import sleep
 
 # defaults
@@ -82,7 +82,7 @@ def nanovna(dev):
             send(ser, "cal off")
             read(ser)
             for i in range(samples):
-                send(ser, "scan {} {} {} 110".format(start, stop, points))
+                send(ser, "scan {:d} {:d} {:d} 110".format(int(start), int(stop), int(points)))
                 text = read(ser)
                 data += np.array([[ float(d) for d in ln.split() ] for ln in text.split('\n') ])
         finally:
@@ -96,9 +96,9 @@ def nanovna(dev):
     return sweep
 
 
-def nanovnav2(dev):
+def saa2(dev):
 
-    # most of this nanovnav2 code was taken from nanovna-saver
+    # most of this saa2 code was taken from nanovna-saver
 
     WRITE_SLEEP = 0.05
 
@@ -122,8 +122,8 @@ def nanovnav2(dev):
         step = (stop - start) / (points - 1)
         cmd = pack("<BBQ", CMD_WRITE8, ADDR_SWEEP_START, int(start))
         cmd += pack("<BBQ", CMD_WRITE8, ADDR_SWEEP_STEP, int(step))
-        cmd += pack("<BBH", CMD_WRITE2, ADDR_SWEEP_POINTS, points)
-        cmd += pack("<BBH", CMD_WRITE2, ADDR_SWEEP_VALS_PER_FREQ, samples)
+        cmd += pack("<BBH", CMD_WRITE2, ADDR_SWEEP_POINTS, int(points))
+        cmd += pack("<BBH", CMD_WRITE2, ADDR_SWEEP_VALS_PER_FREQ, int(samples))
         send(ser, cmd)
         sleep(WRITE_SLEEP)
 
@@ -146,6 +146,7 @@ def nanovnav2(dev):
         send(ser, cmd)
 
     def sweep(start, stop, points, samples):
+        assert(start >= 10e3 and stop <= 3e9)
         assert(points > 1 and points <= 1024)
         freq = np.linspace(start, stop, points)
         data = np.zeros((points, 2), dtype=complex)
@@ -180,12 +181,74 @@ def nanovnav2(dev):
     return sweep
 
 
+def minivna_tiny(dev):
+
+    def read_half(fd):
+        r = fd.read(3)
+        return unpack('<i', r + b'\0')[0]
+
+    def read_sample(fd):
+        x1 = read_half(fd)
+        x2 = read_half(fd)
+        x3 = read_half(fd)
+        x4 = read_half(fd)
+        re = x1 - x3
+        im = x2 - x4
+        return complex(re, im)
+
+    def writeln(fd, buf=''):
+        fd.write(str(buf).encode('latin-1'))
+        fd.write(b'\r')
+
+    def gamma(ser, start, stop, points, transmit=False):
+        assert(start >= 1e6 and stop <= 3e9)
+        max_value = 2 ** 24
+        prescaler = 10
+        # start scan
+        writeln(ser, 6 if transmit else 7)
+        writeln(ser, int(start / prescaler))
+        writeln(ser, int(stop / prescaler))
+        writeln(ser, int(points))
+        writeln(ser)
+        # read scan
+        data = []
+        for i in range(points):
+            c = read_sample(ser)
+            data.append(c / max_value)
+        # end scan
+        writeln(ser, 7)
+        writeln(ser, 0)
+        writeln(ser, 0)
+        writeln(ser, 1)
+        writeln(ser, 0)
+        read_sample(ser)
+        return np.array(data)
+
+    def sweep(start, stop, points, samples):
+        freq = np.linspace(start, stop, points)
+        data = np.zeros((points, 2), dtype=complex)
+        try:
+            baudrate = 921600  # required
+            ser = serial.Serial(dev, baudrate)
+            for i in range(samples):
+                data[:,0] += gamma(ser, start, stop, points)
+            for i in range(samples):
+                data[:,1] += gamma(ser, start, stop, points, transmit=True)
+        finally:
+            ser.close()
+        data = data / samples
+        return freq, data
+
+    return sweep
+
+
 ###############################
 
 
 DEVICES = {
     nanovna: [(0x0483, 0x5740)],
-    nanovnav2: [(0x04b4, 0x0008)],
+    saa2: [(0x04b4, 0x0008)],
+    minivna_tiny: [(0x0403, 0x6015)],
 };
 
 
@@ -265,8 +328,9 @@ def details(cal):
     print('start:  {:.6g} MHz'.format(cal['start'] / 1e6))
     print('stop:   {:.6g} MHz'.format(cal['stop'] / 1e6))
     print('points: {:d}'.format(cal['points']))
-    units = ', '.join([ d for d in calibrations if d in cal ])
-    print('cals:   {}'.format(units if units else '<none>'))
+    units = [ d for d in calibrations if d in cal ]
+    units = [ '{} ({})'.format(d, len(cal[d])) for d in units ]
+    print('cals:   {}'.format(', '.join(units) if units else '<none>'))
 
 
 def show_text(freq, data):
