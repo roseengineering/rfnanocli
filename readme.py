@@ -25,7 +25,7 @@ from the command line.
 The sweep results are printed to the terminal
 in touchstone format.
 
-In addition the utility provides its own error correction.
+The utility provides its own error correction.
 It does not use the onboard calibrations features
 of either nano.
 You must calibrate your nano separately to use this utility.
