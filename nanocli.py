@@ -89,6 +89,8 @@ def nanovna(dev):
                 text = read(ser)
                 data += np.array([[ float(d) for d in ln.split() ] for ln in text.split('\n') ])
         finally:
+            send(ser, "resume")  # resumes and updates frequencies
+            read(ser)
             send(ser, "cal on")
             read(ser)
             ser.close()

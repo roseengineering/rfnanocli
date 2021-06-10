@@ -161,9 +161,6 @@ and do my remote control in Jupyter instead.
 In order to perform a measurement sweep on the original nano, the
 utility first turns calibration off on the device.  Once the
 measurement is made, the utility will turn calibration back on.
-It is recommended to use the same frequency sweep
-with the original nano UI as well as with nanocli to
-avoid UI interpolation issues.
 For the SAA2 nano, since its USB connection is always uncorrected
 its UI is unaffected.
 
