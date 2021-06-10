@@ -143,6 +143,10 @@ data.
 sweep(start=None, stop=None, points=None, filename='cal.npz', samples=2)
 ```
 
+For example:
+
+{run("python3 -c 'from nanocli import sweep; f,d = sweep(points=5); print(d)'")}
+
 ## Reason for This Utility
 
 I needed the ability to perform a calibrated measurement from the terminal
