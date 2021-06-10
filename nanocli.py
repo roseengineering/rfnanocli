@@ -334,7 +334,6 @@ def details(cal):
     print('stop:   {:.6g} MHz'.format(cal['stop'] / 1e6))
     print('points: {:d}'.format(cal['points']))
     units = [ d for d in calibrations if d in cal ]
-    units = [ '{} ({})'.format(d, len(cal[d])) for d in units ]
     print('cals:   {}'.format(', '.join(units) if units else '<none>'))
 
 
