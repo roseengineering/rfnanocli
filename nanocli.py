@@ -72,7 +72,6 @@ def nanovna(dev):
         return result.strip()
 
     def sweep(start, stop, points, samples):
-        assert(stop <= 1500e6)
         assert(points > 1 and points <= 101)
         freq = np.linspace(start, stop, points)
         data = np.zeros((points, 4))
