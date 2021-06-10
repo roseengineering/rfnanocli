@@ -7,7 +7,7 @@ from time import sleep
 
 # defaults
 
-FSTART = 10e3
+FSTART = 50e3
 FSTOP = 10e6
 POINTS = 101
 SAMPLES = 2
