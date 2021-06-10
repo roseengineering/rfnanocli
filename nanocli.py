@@ -126,9 +126,9 @@ def saa2(dev):
         cmd += pack("<BBH", CMD_WRITE2, ADDR_SWEEP_POINTS, int(points))
         cmd += pack("<BBH", CMD_WRITE2, ADDR_SWEEP_VALS_PER_FREQ, int(samples))
         send(ser, cmd)
-        sleep(WRITE_SLEEP)
 
     def clear_state(ser):
+        sleep(WRITE_SLEEP)
         cmd = pack("<Q", 0)
         send(ser, cmd)
         sleep(WRITE_SLEEP)
