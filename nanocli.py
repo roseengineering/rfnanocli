@@ -71,30 +71,38 @@ def nanovna(dev):
                 break
         return result.strip()
 
+    def command(ser, buf):
+        send(ser, buf)
+        return read(ser)
+
+    def clear_state(ser):
+        text = command(ser, "help")
+        if text[:9] != 'Commands:': 
+            text = read(ser)
+
+    def frequencies(ser):
+        text = command(ser, "frequencies")
+        return np.array([ float(d) for d in text.split() ])
+
     def sweep(start, stop, points, samples):
         assert(points > 1 and points <= 101)
-        freq = np.linspace(start, stop, points)
         data = np.zeros((points, 4))
         try:
             ser = serial.Serial(dev)
-            send(ser, "help")
-            text = read(ser)
-            if text[:9] != 'Commands:': 
-                text = read(ser)
-            send(ser, "cal off")
-            read(ser)
+            clear_state(ser)
+            command(ser, "cal off")
             for i in range(samples):
-                send(ser, "scan {:d} {:d} {:d} 110".format(int(start), int(stop), int(points)))
-                text = read(ser)
+                text = command(ser, "scan {:d} {:d} {:d} 110".format(int(start), int(stop), int(points)))
                 data += np.array([[ float(d) for d in ln.split() ] for ln in text.split('\n') ])
+            freq = frequencies(ser)
+            assert(freq[0] == start and freq[-1] == stop and len(freq) == points)
         finally:
-            send(ser, "resume")  # resumes and updates frequencies
-            read(ser)
-            send(ser, "cal on")
-            read(ser)
+            command(ser, "resume")  # resume and update sweep frequencies without calibration
+            command(ser, "cal on")
             ser.close()
-        data = data / samples
+        freq = np.linspace(start, stop, points)
         data = data[:,0::2] + 1j * data[:,1::2]
+        data = data / samples
         return freq, data / samples
 
     return sweep
@@ -150,9 +158,8 @@ def saa2(dev):
         send(ser, cmd)
 
     def sweep(start, stop, points, samples):
-        assert(start >= 10e3 and stop <= 3e9)
+        assert(start >= 10e3 and stop <= 4400e6)
         assert(points > 1 and points <= 1024)
-        freq = np.linspace(start, stop, points)
         data = np.zeros((points, 2), dtype=complex)
         remaining = samples * points
         count = 0
@@ -179,6 +186,7 @@ def saa2(dev):
         finally:
             exit_usbmode(ser)
             ser.close()
+        freq = np.linspace(start, stop, points)
         data = data / samples
         return freq, data
 
@@ -206,6 +214,7 @@ def minivna_tiny(dev):
 
     def gamma(ser, start, stop, points, transmit=False):
         assert(start >= 1e6 and stop <= 3e9)
+        assert(points > 1)
         max_value = 2 ** 24
         prescaler = 10
         # start scan
@@ -229,7 +238,6 @@ def minivna_tiny(dev):
         return np.array(data)
 
     def sweep(start, stop, points, samples):
-        freq = np.linspace(start, stop, points)
         data = np.zeros((points, 2), dtype=complex)
         try:
             baudrate = 921600  # required
@@ -240,6 +248,7 @@ def minivna_tiny(dev):
                 data[:,1] += gamma(ser, start, stop, points, transmit=True)
         finally:
             ser.close()
+        freq = np.linspace(start, stop, points)
         data = data / samples
         return freq, data
 
