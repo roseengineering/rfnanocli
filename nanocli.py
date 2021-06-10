@@ -7,7 +7,7 @@ from time import sleep
 
 # defaults
 
-FSTART = 50e3
+FSTART = 10e3
 FSTOP = 10e6
 POINTS = 101
 SAMPLES = 2
@@ -88,6 +88,9 @@ def nanovna(dev):
                 send(ser, "scan {:d} {:d} {:d} 110".format(int(start), int(stop), int(points)))
                 text = read(ser)
                 data += np.array([[ float(d) for d in ln.split() ] for ln in text.split('\n') ])
+            send(ser, "frequencies")
+            text = read(ser)
+            print(text)
         finally:
             send(ser, "resume")  # resumes and updates frequencies
             read(ser)
