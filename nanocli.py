@@ -78,8 +78,10 @@ def nanovna(dev):
         data = np.zeros((points, 4))
         try:
             ser = serial.Serial(dev)
-            send(ser, "")
-            read(ser)
+            send(ser, "help")
+            text = read(ser)
+            if text[:9] != 'Commands:': 
+                text = read(ser)
             send(ser, "cal off")
             read(ser)
             for i in range(samples):
