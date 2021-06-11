@@ -2,12 +2,12 @@
 import numpy as np
 import serial, os
 from serial.tools import list_ports
-from struct import pack, unpack, unpack_from
+from struct import pack, unpack_from
 from time import sleep
 
 # defaults
 
-FSTART = 10e3
+FSTART = 100e3
 FSTOP = 10e6
 POINTS = 101
 SAMPLES = 2
@@ -324,8 +324,6 @@ def main():
         raise RuntimeError('Cannot do more than one calibration at a time.')
     if unit and args.init:
         raise RuntimeError('Cannot both intialize and calibrate.')
-    if unit and (args.start or args.stop or args.points):
-        raise RuntimeError('Cannot interpolate the calibration.')
 
     # initialize calibration
     if args.init:
@@ -341,7 +339,7 @@ def main():
         return
 
     # interpolate
-    if args.start or args.stop or args.points:
+    if not unit and (args.start or args.stop or args.points):
         cal_interpolate(cal, args.start, args.stop, args.points)
 
     # measure
