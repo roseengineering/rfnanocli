@@ -1,6 +1,6 @@
 
 import numpy as np
-import serial
+import serial, os
 from serial.tools import list_ports
 from struct import pack, unpack, unpack_from
 from time import sleep
@@ -11,7 +11,7 @@ FSTART = 10e3
 FSTOP = 10e6
 POINTS = 101
 SAMPLES = 2
-CALFILE = 'cal.npz'
+CALFILE = 'cal'
  
 FORMAT_TEXT = ' {:25.6g} {:25.6g}'
 FORMAT_DB   = ' {:11.3f} {:9.3f}'
@@ -111,6 +111,7 @@ def nanovna(dev):
 def saa2(dev):
 
     # most of this saa2 code was taken from nanovna-saver
+    # the si5351 is used up to 140Mhz
 
     WRITE_SLEEP = 0.05
 
@@ -193,75 +194,11 @@ def saa2(dev):
     return sweep
 
 
-def minivna_tiny(dev):
-
-    def read_half(fd):
-        r = fd.read(3)
-        return unpack('<i', r + b'\0')[0]
-
-    def read_sample(fd):
-        x1 = read_half(fd)
-        x2 = read_half(fd)
-        x3 = read_half(fd)
-        x4 = read_half(fd)
-        re = x1 - x3
-        im = x2 - x4
-        return complex(re, im)
-
-    def writeln(fd, buf=''):
-        fd.write(str(buf).encode('latin-1'))
-        fd.write(b'\r')
-
-    def gamma(ser, start, stop, points, transmit=False):
-        assert(start >= 1e6 and stop <= 3e9)
-        assert(points > 1)
-        max_value = 2 ** 24
-        prescaler = 10
-        # start scan
-        writeln(ser, 6 if transmit else 7)
-        writeln(ser, int(start / prescaler))
-        writeln(ser, int(stop / prescaler))
-        writeln(ser, int(points))
-        writeln(ser)
-        # read scan
-        data = []
-        for i in range(points):
-            c = read_sample(ser)
-            data.append(c / max_value)
-        # end scan
-        writeln(ser, 7)
-        writeln(ser, 0)
-        writeln(ser, 0)
-        writeln(ser, 1)
-        writeln(ser, 0)
-        read_sample(ser)
-        return np.array(data)
-
-    def sweep(start, stop, points, samples):
-        data = np.zeros((points, 2), dtype=complex)
-        try:
-            baudrate = 921600  # required
-            ser = serial.Serial(dev, baudrate)
-            for i in range(samples):
-                data[:,0] += gamma(ser, start, stop, points)
-            for i in range(samples):
-                data[:,1] += gamma(ser, start, stop, points, transmit=True)
-        finally:
-            ser.close()
-        freq = np.linspace(start, stop, points)
-        data = data / samples
-        return freq, data
-
-    return sweep
-
-
 ###############################
-
 
 DEVICES = {
     nanovna: [(0x0483, 0x5740)],
-    saa2: [(0x04b4, 0x0008)],
-    minivna_tiny: [(0x0403, 0x6015)],
+    saa2: [(0x04b4, 0x0008)]
 };
 
 
@@ -276,13 +213,13 @@ def getport():
 
 def calibrate(cal):
     # see Rytting, "Network analyzer error models and calibration methods", HP 1998
+    # e30 assumed to be zero
     gms = cal.get("short", -1)
     gmo = cal.get("open", 1)
     gml = cal.get("load", 0)
     gmu = cal.get("thru", 0)
     gmu21 = cal.get("thru21", 1) # 0 causes nan results
     d = {}
-    # e30 assumed to be zero
     d['e00'] = gml
     d['e11'] = (gmo + gms - 2 * gml) / (gmo - gms)
     d['de'] = (2 * gmo * gms - gml * gms - gml * gmo) / (gmo - gms) 
@@ -322,7 +259,8 @@ def cal_init(filename, start, stop, points):
 
 def cal_load(filename):
     try:
-        npzfile = np.load(filename)
+        name, ext = os.path.splitext(filename)
+        npzfile = np.load('{}{}'.format(name, ext or '.npz'))
     except FileNotFoundError:
         raise RuntimeError('No calibration file, please initialize.')
     return dict(npzfile)
