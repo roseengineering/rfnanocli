@@ -14,6 +14,21 @@ of either nano.
 You must calibrate your nano separately to use this utility.
 The calibration data is stored in a npz file on your computer.
 
+Lastly, the utility takes steps not to disturb your nano UI settings.
+So you can sweep a different range of frequencies using nanocli than what the UI is sweeping,
+and the nano UI will be unaffected.
+Nanocli will neither upset your nano UI calibrations nor your UI frequency sweep
+settings.
+
+## How to Use
+
+After calibration, just issue the following on the command line.
+
+$ python3 nanocli.py
+
+If an error gets throw, like not being able to find the device or ValueError, try again
+or reset your device.  None of the nanos have a perfect USB interface.
+
 ## Walkthrough
 
 First initialize the calibration file, setting the 
@@ -53,11 +68,11 @@ Now run a sweep.
 ```
 $ python3 nanocli.py --points 5
 # MHz S MA R 50
-0.01           0.00026555   164.897        0.14916  -179.650        0.14916  -179.650     0.00026555   164.897
-2.5075         0.00019288   158.239         0.1476   177.259         0.1476   177.259     0.00019288   158.239
-5.005          0.00016462   145.557        0.14734   174.689        0.14734   174.689     0.00016462   145.557
-7.5025         0.00012765   155.272        0.14709   172.187        0.14709   172.187     0.00012765   155.272
-10             8.5662e-05   155.754        0.14701   169.632        0.14701   169.632     8.5662e-05   155.754
+0.01             0.044138     0.613     4.6703e-05    11.717     4.6703e-05    11.717       0.044138     0.613
+2.5075           0.044183    -0.500     9.7262e-06   160.101     9.7262e-06   160.101       0.044183    -0.500
+5.005            0.044131    -0.900     4.0746e-06    26.672     4.0746e-06    26.672       0.044131    -0.900
+7.5025           0.044185    -1.333     1.0284e-05    94.168     1.0284e-05    94.168       0.044185    -1.333
+10               0.044133    -1.706     8.6263e-06   143.810     8.6263e-06   143.810       0.044133    -1.706
 ```
 
 
@@ -67,11 +82,11 @@ Return the results in dB.
 ```
 $ python3 nanocli.py --db --points 5
 # MHz S DB R 50
-0.01           -71.536   166.622     -16.527  -179.649     -16.527  -179.649     -71.536   166.622
-2.5075         -73.581   157.677     -16.618   177.252     -16.618   177.252     -73.581   157.677
-5.005          -75.540   149.695     -16.634   174.695     -16.634   174.695     -75.540   149.695
-7.5025         -77.599   156.999     -16.648   172.186     -16.648   172.186     -77.599   156.999
-10             -81.578   155.772     -16.653   169.645     -16.653   169.645     -81.578   155.772
+0.01           -27.109     0.623     -89.578    44.892     -89.578    44.892     -27.109     0.623
+2.5075         -27.093    -0.537    -104.881   -26.210    -104.881   -26.210     -27.093    -0.537
+5.005          -27.104    -0.894    -114.070   150.155    -114.070   150.155     -27.104    -0.894
+7.5025         -27.095    -1.327    -104.457   163.831    -104.457   163.831     -27.095    -1.327
+10             -27.105    -1.701    -113.038   155.510    -113.038   155.510     -27.105    -1.701
 ```
 
 
@@ -81,11 +96,11 @@ Write a s1p file to stdout.
 ```
 $ python3 nanocli.py -1 --db --points 5
 # MHz S DB R 50
-0.01           -70.988   164.586
-2.5075         -73.753   160.629
-5.005          -75.539   146.385
-7.5025         -78.160   158.769
-10             -81.825   150.954
+0.01           -27.105     0.583
+2.5075         -27.092    -0.517
+5.005          -27.104    -0.905
+7.5025         -27.094    -1.337
+10             -27.106    -1.704
 ```
 
 
@@ -135,7 +150,7 @@ optional arguments:
   -1, --one             show s1p (default: False)
   --db                  show in dB (default: False)
   -f FILENAME, --filename FILENAME
-                        calibration file (default: cal.npz)
+                        calibration file (default: cal)
   -n SAMPLES, --samples SAMPLES
                         samples per frequency (default: 2)
   --start START         start frequency (Hz) (default: None)
@@ -209,11 +224,11 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import sweep; f,d = sweep(points=5); print(d)'
-[[-2.61711750e-04+7.10500000e-05j -1.49149056e-01-8.93460250e-04j]
- [-1.75940750e-04+9.59042500e-05j -1.47417192e-01+7.08556975e-03j]
- [-1.38944250e-04+8.09927500e-05j -1.46718800e-01+1.36429395e-02j]
- [-1.23857250e-04+4.62892500e-05j -1.45731632e-01+2.00009960e-02j]
- [-7.94062500e-05+3.16160000e-05j -1.44615432e-01+2.64509450e-02j]]
+[[ 4.4120084e-02+4.36676750e-04j  3.3317250e-05+5.46100000e-06j]
+ [ 4.4178758e-02-4.12804250e-04j -3.4230000e-06-7.77625000e-06j]
+ [ 4.4128226e-02-6.95219250e-04j  2.2577500e-06+1.20725000e-06j]
+ [ 4.4170078e-02-1.03247375e-03j -5.3662500e-06+3.44550000e-06j]
+ [ 4.4113516e-02-1.32664650e-03j -2.0900000e-06-7.23000000e-07j]]
 ```
 
 

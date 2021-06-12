@@ -31,6 +31,21 @@ of either nano.
 You must calibrate your nano separately to use this utility.
 The calibration data is stored in a npz file on your computer.
 
+Lastly, the utility takes steps not to disturb your nano UI settings.
+So you can sweep a different range of frequencies using nanocli than what the UI is sweeping,
+and the nano UI will be unaffected.
+Nanocli will neither upset your nano UI calibrations nor your UI frequency sweep
+settings.
+
+## How to Use
+
+After calibration, just issue the following on the command line.
+
+$ python3 nanocli.py
+
+If an error gets throw, like not being able to find the device or ValueError, try again
+or reset your device.  None of the nanos have a perfect USB interface.
+
 ## Walkthrough
 
 First initialize the calibration file, setting the 
