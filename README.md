@@ -24,9 +24,17 @@ settings.
 
 After calibration, just issue the following on the command line.
 
+```
 $ python3 nanocli.py
+# MHz S MA R 50
+0.01             0.044138     0.613     4.6703e-05    11.717     4.6703e-05    11.717       0.044138     0.613
+2.5075           0.044183    -0.500     9.7262e-06   160.101     9.7262e-06   160.101       0.044183    -0.500
+5.005            0.044131    -0.900     4.0746e-06    26.672     4.0746e-06    26.672       0.044131    -0.900
+7.5025           0.044185    -1.333     1.0284e-05    94.168     1.0284e-05    94.168       0.044185    -1.333
+10               0.044133    -1.706     8.6263e-06   143.810     8.6263e-06   143.810       0.044133    -1.706
+```
 
-If an error gets throw, like not being able to find the device or ValueError, try again
+If an error gets thrown, like not being able to find the device or ValueError, try again
 or reset your device.  None of the nanos have a perfect USB interface.
 
 ## Walkthrough

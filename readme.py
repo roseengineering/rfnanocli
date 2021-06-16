@@ -2,10 +2,15 @@
 import subprocess 
 
 
+def spawn(command):
+    proc = subprocess.Popen("PYTHONPATH=. " + command, shell=True, stdout=subprocess.PIPE)
+    proc.wait()
+    return ''
+
 def run(command, language=""):
     proc = subprocess.Popen("PYTHONPATH=. " + command, shell=True, stdout=subprocess.PIPE)
-    buf = proc.stdout.read().decode()
     proc.wait()
+    buf = proc.stdout.read().decode()
     return f"""
 ```{language}
 $ {command}
@@ -41,9 +46,10 @@ settings.
 
 After calibration, just issue the following on the command line.
 
-$ python3 nanocli.py
+{spawn("python3 nanocli.py --init --start 10e3 --stop 10e6 --points 5")}
+{run("python3 nanocli.py")}
 
-If an error gets throw, like not being able to find the device or ValueError, try again
+If an error gets thrown, like not being able to find the device or ValueError, try again
 or reset your device.  None of the nanos have a perfect USB interface.
 
 ## Walkthrough
