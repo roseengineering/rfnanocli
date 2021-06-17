@@ -189,6 +189,13 @@ measurement is made, the utility will turn calibration back on.
 For the SAA2 nano, since its USB connection is always uncorrected
 its UI is unaffected.
 
+## Derivation of Calibration
+
+See the papers on Network Analyzer Error Models and Calibration Methods
+by Doug Rytting.
+
+![](cal.png)
+
 """)
 
 
