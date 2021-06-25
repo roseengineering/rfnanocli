@@ -296,6 +296,17 @@ def show_touchstone(freq, data, one_port, db_flag):
             print('{}{}{}{}'.format(one, two, two, one))
 
 
+# public interface
+
+def sweep(start=None, stop=None, points=None, filename=CALFILE, samples=SAMPLES, average=False):
+    cal = cal_load(filename=filename)
+    if start or stop or points:
+        cal_interpolate(cal=cal, start=start, stop=stop, points=points)
+    freq, data = measure(cal=cal, samples=samples, average=average)
+    data = cal_correct(cal=cal, data=data)
+    return freq, data
+
+
 def main():
     # which calibration to run
     unit = [ d for d in CALIBRATIONS if args.__dict__.get(d) ]
