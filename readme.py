@@ -57,7 +57,7 @@ or reset your device.  None of the nanos have a perfect USB interface.
 First initialize the calibration file, setting the 
 frequency sweep.
 
-{run("python3 nanocli.py --init --start 10e3 --stop 10e6 --points 1001")}
+{run("python3 nanocli.py --init --start 10e3 --stop 10e6 --points 101")}
 
 Print details on the calibration file.
 
@@ -88,7 +88,7 @@ Write a s1p file to stdout.
 Passing the --points option above
 forces an interpolation of the calibration data
 to the frequencies of the new sweep.  If this option was not given
-the original 1001 frequencies used for calibration would be swept
+the original 101 frequencies used for calibration would be swept
 and without any interpolation of the calibration data.
 
 ## How to Install
