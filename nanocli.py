@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import numpy as np
-import serial, os
+import serial, os, sys
 from serial.tools import list_ports
 from struct import pack, unpack_from
 
@@ -202,9 +202,12 @@ def getport(devnum):
                 d.append((fn, device.device))
     if len(d) == 0:
         raise RuntimeError("NanoVNA device not found.")
-    if len(d) > 1 and devnum is None:
-        raise RuntimeError("More than one device found; use --device to select.")
-    fn, device = d[0 if devnum is None else devnum]
+    if len(d) > 1 and (devnum is None or devnum < 1 or devnum > len(d)):
+        print("Which NanoVNA?  Use --device to select.", file=sys.stderr)
+        for i in range(len(d)):
+            print("{}. {}".format(i+1, d[i][1]), file=sys.stderr)
+        sys.exit(1)
+    fn, device = d[0 if devnum is None else devnum-1]
     return fn(device)
 
 
