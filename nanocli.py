@@ -37,10 +37,11 @@ def parse_args():
     parser.add_argument('-r', '--raw', action='store_true', help='do not apply calibration')
     parser.add_argument('-1', '--one-port',  action='store_true', help='output in s1p format')
     parser.add_argument('--db', action='store_true', help='show in dB')
-    parser.add_argument('--average', action='store_true', help='take average of samples instead of median')
+    parser.add_argument('--average', action='store_true', help='take average of samples, not median')
     # value options 
     parser.add_argument('-f', '--filename', default=CALFILE, help='calibration file')
     parser.add_argument('-n', '--samples', default=SAMPLES, type=int, help='samples per frequency')
+    parser.add_argument('--device', type=int, help='select device number')
     parser.add_argument('--start', type=float, help='start frequency (Hz)')
     parser.add_argument('--stop', type=float, help='stop frequency (Hz)')
     parser.add_argument('--points', type=int, help='frequency points')
@@ -81,12 +82,15 @@ def nanovna(dev):
         if text[:9] != 'Commands:': 
             text = read(ser)
 
-    def frequencies(ser):
-        text = command(ser, "frequencies")
-        return np.array([ float(d) for d in text.split() ])
+    def scan(ser, start, stop, points):
+        cmd = "scan {:d} {:d} {:d} 110".format(start, stop, points)
+        text = command(ser, cmd)
+        d = np.array([[ float(c) for c in ln.split() ] for ln in text.split('\n') ])
+        return d[:,0::2] + 1j * d[:,1::2]
 
     def sweep(start, stop, points, samples):
         assert(points > 1 and points <= 101)
+        start, stop, points = int(start), int(stop), int(points)
         freq = np.linspace(start, stop, points)
         data = []
         try:
@@ -94,12 +98,8 @@ def nanovna(dev):
             clear_state(ser)
             command(ser, "cal off")
             for i in range(samples):
-                text = command(ser, "scan {:d} {:d} {:d} 110".format(int(start), int(stop), int(points)))
-                d = np.array([[ float(c) for c in ln.split() ] for ln in text.split('\n') ])
-                d = d[:,0::2] + 1j * d[:,1::2]
+                d = scan(ser, start=start, stop=stop, points=points)
                 data.append(d)
-            freq = frequencies(ser)
-            assert(freq[0] == start and freq[-1] == stop and len(freq) == points)
         finally:
             command(ser, "resume")  # resume and update sweep frequencies without calibration
             command(ser, "cal on")
@@ -193,13 +193,19 @@ DEVICES = {
 };
 
 
-def getport():
+def getport(devnum):
     device_list = list_ports.comports()
+    d = []
     for device in device_list:
         for fn, address in DEVICES.items():
             if (device.vid, device.pid) in address:
-                return fn(device.device)
-    raise RuntimeError("NanoVNA device not found.")
+                d.append((fn, device.device))
+    if len(d) == 0:
+        raise RuntimeError("NanoVNA device not found.")
+    if len(d) > 1 and devnum is None:
+        raise RuntimeError("More than one device found; use --device to select.")
+    fn, device = d[0 if devnum is None else devnum]
+    return fn(device)
 
 
 def calibrate(cal):
@@ -258,11 +264,11 @@ def cal_load(filename):
     return dict(npzfile)
 
 
-def measure(cal, samples, average):
+def measure(cal, samples, average, device):
     start = cal['start']
     stop = cal['stop']
     points = cal['points']
-    sweep = getport()
+    sweep = getport(device)
     freq, data = sweep(start, stop, points, samples)
     if average:
         data = np.average(data, axis=0)
@@ -298,11 +304,11 @@ def show_touchstone(freq, data, one_port, db_flag):
 
 # public interface
 
-def sweep(start=None, stop=None, points=None, filename=CALFILE, samples=SAMPLES, average=False):
+def sweep(start=None, stop=None, points=None, filename=CALFILE, samples=SAMPLES, average=False, device=None):
     cal = cal_load(filename=filename)
     if start or stop or points:
         cal_interpolate(cal=cal, start=start, stop=stop, points=points)
-    freq, data = measure(cal=cal, samples=samples, average=average)
+    freq, data = measure(cal=cal, samples=samples, average=average, device=device)
     data = cal_correct(cal=cal, data=data)
     return freq, data
 
@@ -335,7 +341,7 @@ def main():
         cal = cal_interpolate(cal=cal, start=args.start, stop=args.stop, points=args.points)
 
     # measure
-    freq, data = measure(cal=cal, samples=args.samples, average=args.average)
+    freq, data = measure(cal=cal, samples=args.samples, average=args.average, device=args.device)
 
     # calibrate
     if unit:

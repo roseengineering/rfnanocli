@@ -161,7 +161,7 @@ start, stop or points will force an interpolation of the calibration
 data.
 
 ```python
-sweep(start=None, stop=None, points=None, filename='cal', samples=3, average=False)
+sweep(start=None, stop=None, points=None, filename='cal', samples=3, average=False, device=None)
 ```
 
 For example:
