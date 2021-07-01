@@ -89,8 +89,12 @@ def nanovna(dev):
         return d[:,0::2] + 1j * d[:,1::2]
 
     def sweep(start, stop, points, samples):
-        assert(points > 1 and points <= 101)
         start, stop, points = int(start), int(stop), int(points)
+        assert(stop > start)
+        assert(points > 1 and points <= 101)
+        assert(start >= 6348 and stop <= 2.7e9)
+        # since Si5351 multisynth divider ratio < 2048, 6348 is the min freq:
+        # 26000000 {xtal} * 32 {pll_n} / (6348 {freq} << 6 {rdiv}) = 2047.9
         freq = np.linspace(start, stop, points)
         data = []
         try:
@@ -156,6 +160,8 @@ def saa2(dev):
         send(ser, cmd)
 
     def sweep(start, stop, points, samples):
+        start, stop, points = int(start), int(stop), int(points)
+        assert(stop > start)
         assert(start >= 10e3 and stop <= 4400e6)
         assert(points > 1 and points <= 255)
         freq = np.linspace(start, stop, points)
