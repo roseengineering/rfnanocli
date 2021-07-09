@@ -266,6 +266,10 @@ measurement is made, the utility will turn calibration back on.
 For the SAA2 nano, since its USB connection is always uncorrected
 its UI is unaffected.
 
+## Supported Nanovna Versions
+
+For the NanoVNA, only versions 0.7.1 and higher of the firmware are supported.
+
 ## Derivation of Calibration
 
 See the papers on Network Analyzer Error Models and Calibration Methods
