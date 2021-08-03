@@ -8,7 +8,7 @@ from struct import pack, unpack_from
 # defaults
 
 FSTART = 100e3
-FSTOP = 10e6
+FSTOP = 10.1e6
 POINTS = 101
 SAMPLES = 3
 CALFILE = 'cal'
