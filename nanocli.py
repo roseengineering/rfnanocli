@@ -91,7 +91,8 @@ def nanovna(dev):
     def sweep(start, stop, points, samples):
         start, stop, points = int(start), int(stop), int(points)
         assert(stop > start)
-        assert(points > 1 and points <= 101)
+        assert(points > 1)
+        # points should also be <= 101, but dislord extended it to 301
         assert(start >= 6348 and stop <= 2.7e9)
         # since Si5351 multisynth divider ratio < 2048, 6348 is the min freq:
         # 26000000 {xtal} * 32 {pll_n} / (6348 {freq} << 6 {rdiv}) = 2047.9
