@@ -83,10 +83,13 @@ def nanovna(dev):
             text = read(ser)
 
     def scan(ser, start, stop, points):
-        cmd = "scan {:d} {:d} {:d} 110".format(start, stop, points)
+        freq = np.linspace(start, stop, points)
+        cmd = "scan {:d} {:d} {:d} 111".format(start, stop, points)
         text = command(ser, cmd)
         d = np.array([[ float(c) for c in ln.split() ] for ln in text.split('\n') ])
-        return d[:,0::2] + 1j * d[:,1::2]
+        assert(np.all(freq == d[:,0]))
+        return d[:,1::2] + 1j * d[:,2::2]
+
 
     def sweep(start, stop, points, samples):
         start, stop, points = int(start), int(stop), int(points)
