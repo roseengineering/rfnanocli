@@ -101,17 +101,15 @@ def nanovna(dev):
         # 26000000 {xtal} * 32 {pll_n} / (6348 {freq} << 6 {rdiv}) = 2047.9
         freq = np.linspace(start, stop, points)
         data = []
-        try:
-            ser = serial.Serial(dev)
-            clear_state(ser)
-            command(ser, "cal off")
-            for i in range(samples):
-                d = scan(ser, start=start, stop=stop, points=points)
-                data.append(d)
-        finally:
-            command(ser, "resume")  # resume and update sweep frequencies without calibration
-            command(ser, "cal on")
-            ser.close()
+        ser = serial.Serial(dev)
+        clear_state(ser)
+        command(ser, "cal off")
+        for i in range(samples):
+            d = scan(ser, start=start, stop=stop, points=points)
+            data.append(d)
+        command(ser, "resume")  # resume and update sweep frequencies without calibration
+        command(ser, "cal on")
+        ser.close()
         return freq, data
 
     return sweep
