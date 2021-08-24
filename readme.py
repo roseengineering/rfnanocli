@@ -178,9 +178,9 @@ times, magnitude_db = timedomain(frequencies, gammas)
 Use these functions to convert the S11 frequency measurements of
 a bandpass filter into the time domain.  
 
-Specifically the function range_timedomain() returns the
+Specifically the function range\_timedomain() returns the
 start and stop frequencies which will create
-a time domain result with the specificed time span for the given 
+a time domain result with the specified time span for the given 
 number of frequency points.
 The function timedomain() does the actual IFFT transform 
 on the frequency domain data into the time domain.
