@@ -391,7 +391,7 @@ def range_timedomain(fo, period, n):
     df = 1 / (2 * period)
     df = fo / np.ceil(fo / df)
     span = (n - 1) * df
-    return np.linspace(fo - span / 2, fo + span / 2, n)
+    return fo - span / 2, fo + span / 2
 
 
 if __name__ == '__main__':
