@@ -29,11 +29,11 @@ After calibration, just issue the following on the command line.
 ```
 $ python3 nanocli.py
 # MHz S MA R 50
-0.01             0.093974     1.675     7.5289e-06    54.116     7.5289e-06    54.116       0.093974     1.675
-2.5075            0.09413    -0.016     3.4944e-05    84.075     3.4944e-05    84.075        0.09413    -0.016
-5.005            0.094092    -0.469     2.6199e-05    65.891     2.6199e-05    65.891       0.094092    -0.469
-7.5025           0.094064    -0.899      4.349e-05  -146.059      4.349e-05  -146.059       0.094064    -0.899
-10               0.094043    -1.384     2.7174e-05   117.076     2.7174e-05   117.076       0.094043    -1.384
+0.01             0.089508     0.552     2.5096e-05   119.456     2.5096e-05   119.456       0.089508     0.552
+2.5075            0.08929    -0.579      1.884e-05   107.783      1.884e-05   107.783        0.08929    -0.579
+5.005             0.08925    -1.026     9.4445e-06    89.393     9.4445e-06    89.393        0.08925    -1.026
+7.5025           0.089199    -1.442     1.2654e-05  -179.488     1.2654e-05  -179.488       0.089199    -1.442
+10               0.089286    -2.099     2.2223e-05    75.535     2.2223e-05    75.535       0.089286    -2.099
 ```
 
 
@@ -79,11 +79,11 @@ Now run a sweep.
 ```
 $ python3 nanocli.py --points 5
 # MHz S MA R 50
-0.01             0.093972     1.667     1.9348e-05    30.642     1.9348e-05    30.642       0.093972     1.667
-2.5075           0.094143    -0.000      3.842e-05  -129.195      3.842e-05  -129.195       0.094143    -0.000
-5.005            0.094085    -0.461     3.3425e-05   146.259     3.3425e-05   146.259       0.094085    -0.461
-7.5025           0.094068    -0.911      1.362e-05   175.827      1.362e-05   175.827       0.094068    -0.911
-10               0.094029    -1.357     2.2766e-05    88.815     2.2766e-05    88.815       0.094029    -1.357
+0.01             0.089495     0.561     3.4898e-05   116.752     3.4898e-05   116.752       0.089495     0.561
+2.5075           0.089294    -0.592     1.1406e-05  -153.765     1.1406e-05  -153.765       0.089294    -0.592
+5.005             0.08925    -1.030     1.0711e-05    61.255     1.0711e-05    61.255        0.08925    -1.030
+7.5025           0.089203    -1.446     1.7818e-05    94.271     1.7818e-05    94.271       0.089203    -1.446
+10               0.089282    -2.097     7.8642e-06   -50.888     7.8642e-06   -50.888       0.089282    -2.097
 ```
 
 
@@ -93,11 +93,11 @@ Return the results in dB.
 ```
 $ python3 nanocli.py --db --points 5
 # MHz S DB R 50
-0.01           -20.539     1.677     -88.685   125.798     -88.685   125.798     -20.539     1.677
-2.5075         -20.526     0.011     -89.053    75.524     -89.053    75.524     -20.526     0.011
-5.005          -20.527    -0.466     -91.642  -108.304     -91.642  -108.304     -20.527    -0.466
-7.5025         -20.533    -0.918     -91.736   139.076     -91.736   139.076     -20.533    -0.918
-10             -20.535    -1.374     -94.096    69.628     -94.096    69.628     -20.535    -1.374
+0.01           -20.964     0.564    -101.020    74.549    -101.020    74.549     -20.964     0.564
+2.5075         -20.983    -0.584    -102.148   127.262    -102.148   127.262     -20.983    -0.584
+5.005          -20.991    -1.016     -91.498   153.339     -91.498   153.339     -20.991    -1.016
+7.5025         -20.995    -1.441     -92.045   -36.763     -92.045   -36.763     -20.995    -1.441
+10             -20.986    -2.085     -96.731    70.594     -96.731    70.594     -20.986    -2.085
 ```
 
 
@@ -107,11 +107,11 @@ Write a s1p file to stdout.
 ```
 $ python3 nanocli.py -1 --db --points 5
 # MHz S DB R 50
-0.01           -20.541     1.669
-2.5075         -20.526    -0.001
-5.005          -20.530    -0.466
-7.5025         -20.531    -0.896
-10             -20.534    -1.381
+0.01           -20.965     0.559
+2.5075         -20.984    -0.594
+5.005          -20.989    -1.025
+7.5025         -20.996    -1.462
+10             -20.986    -2.074
 ```
 
 
@@ -218,8 +218,8 @@ formatted for a s1p touchstone file.
 
 ## Python Interface
 
-Import this library using import nanocli.  There is only one function
-provided called sweep.  It returns a (freq, data) tuple for the result.
+Import this library using import nanocli.  The most important function
+provided is called sweep.  It returns a (freq, data) tuple for the result.
 freq is an array of frequencies points and data is a 2xN array
 of s11 and s21 calibration corrected measurements.
 
@@ -229,7 +229,7 @@ start, stop or points will force an interpolation of the calibration
 data.
 
 ```python
-sweep(start=None, stop=None, points=None, filename='cal', samples=3, average=False, device=None)
+frequencies, gammas = sweep(start=None, stop=None, points=None, filename='cal', samples=3, average=False, device=None)
 ```
 
 For example:
@@ -237,13 +237,26 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import sweep; f,d = sweep(points=5); print(d)'
-[[ 9.3944936e-02+2.749016e-03j  1.6728000e-05-4.386000e-06j]
- [ 9.4144752e-02-1.526400e-05j -8.0720000e-06+3.125800e-05j]
- [ 9.4082416e-02-7.480370e-04j  1.4800000e-06+1.526800e-05j]
- [ 9.4072736e-02-1.502874e-03j -1.9288000e-05+3.392600e-05j]
- [ 9.4001656e-02-2.262796e-03j  7.4610000e-06-5.669000e-06j]]
+[[ 8.9483376e-02+8.129330e-04j  5.3230000e-06+8.220000e-07j]
+ [ 8.9277856e-02-9.093630e-04j -1.0160000e-05+1.549100e-05j]
+ [ 8.9213592e-02-1.578457e-03j  2.1400000e-06+8.055000e-06j]
+ [ 8.9144424e-02-2.250676e-03j  6.2000000e-08+9.787000e-06j]
+ [ 8.9198784e-02-3.235761e-03j  1.8360000e-06+1.102500e-05j]]
 ```
 
+
+The other two public functions provided are:
+
+```python
+frequencies = range_timedomain(center_frequency, time_span, points)
+times, magnitude_db = timedomain(frequencies, gammas)
+```
+
+Use this function, for example, to convert the S11 frequency measurements of
+a bandpass filter into the time domain.  The function range_timedomain() returns a
+linspace array of frequencies of the given number of points which will create
+a time domain result of the given time span when passed to the function timedomain()
+that does the IFFT transform on the frequency domain data.
 
 ## Reason for This Utility
 

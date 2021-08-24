@@ -313,17 +313,6 @@ def show_touchstone(freq, data, one_port, db_flag):
             print('{}{}{}{}'.format(one, two, two, one))
 
 
-# public interface
-
-def sweep(start=None, stop=None, points=None, filename=CALFILE, samples=SAMPLES, average=False, device=None):
-    cal = cal_load(filename=filename)
-    if start or stop or points:
-        cal_interpolate(cal=cal, start=start, stop=stop, points=points)
-    freq, data = measure(cal=cal, samples=samples, average=average, device=device)
-    data = cal_correct(cal=cal, data=data)
-    return freq, data
-
-
 def main():
     # which calibration to run
     unit = [ d for d in CALIBRATIONS if args.__dict__.get(d) ]
@@ -368,6 +357,41 @@ def main():
 
     # write output
     show_touchstone(freq=freq, data=data, one_port=args.one_port, db_flag=args.db) 
+
+
+####################
+# public interface
+####################
+
+def sweep(start=None, stop=None, points=None,
+          filename=CALFILE, samples=SAMPLES,
+          average=False, device=None):
+    cal = cal_load(filename=filename)
+    if start or stop or points:
+        cal_interpolate(cal=cal, start=start, stop=stop, points=points)
+    freq, data = measure(cal=cal, samples=samples, average=average, device=device)
+    data = cal_correct(cal=cal, data=data)
+    return freq, data
+
+
+# return the time domain of gamma values at frequencies f
+def timedomain(f, gm):
+    gm = np.concatenate(([0], gm))
+    N = len(gm)
+    window = np.kaiser(N, 14) # kaiser gives nicer peaks and dips
+    td = np.fft.ifft(gm * window, N * 2 - 1) # ensure odd
+    td = db(td[:N])
+    df = f[1] - f[0]
+    taxis = np.linspace(0, 1 / df / 2, N)
+    return taxis, td
+
+
+# calculate the frequency span needed for a given time domain period
+def range_timedomain(fo, period, n):
+    df = 1 / (2 * period)
+    df = fo / np.ceil(fo / df)
+    span = (n - 1) * df
+    return np.linspace(fo - span / 2, fo + span / 2, n)
 
 
 if __name__ == '__main__':

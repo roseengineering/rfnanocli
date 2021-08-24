@@ -150,8 +150,8 @@ formatted for a s1p touchstone file.
 
 ## Python Interface
 
-Import this library using import nanocli.  There is only one function
-provided called sweep.  It returns a (freq, data) tuple for the result.
+Import this library using import nanocli.  The most important function
+provided is called sweep.  It returns a (freq, data) tuple for the result.
 freq is an array of frequencies points and data is a 2xN array
 of s11 and s21 calibration corrected measurements.
 
@@ -161,12 +161,25 @@ start, stop or points will force an interpolation of the calibration
 data.
 
 ```python
-sweep(start=None, stop=None, points=None, filename='cal', samples=3, average=False, device=None)
+frequencies, gammas = sweep(start=None, stop=None, points=None, filename='cal', samples=3, average=False, device=None)
 ```
 
 For example:
 
 {run("python3 -c 'from nanocli import sweep; f,d = sweep(points=5); print(d)'")}
+
+The other two public functions provided are:
+
+```python
+frequencies = range_timedomain(center_frequency, time_span, points)
+times, magnitude_db = timedomain(frequencies, gammas)
+```
+
+Use this function, for example, to convert the S11 frequency measurements of
+a bandpass filter into the time domain.  The function range_timedomain() returns a
+linspace array of frequencies of the given number of points which will create
+a time domain result of the given time span when passed to the function timedomain()
+that does the IFFT transform on the frequency domain data.
 
 ## Reason for This Utility
 
