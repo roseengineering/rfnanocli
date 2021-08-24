@@ -175,11 +175,13 @@ frequencies = range_timedomain(center_frequency, time_span, points)
 times, magnitude_db = timedomain(frequencies, gammas)
 ```
 
-Use this function, for example, to convert the S11 frequency measurements of
-a bandpass filter into the time domain.  The function range_timedomain() returns a
+Use these functions to convert the S11 frequency measurements of
+a bandpass filter into the time domain.  
+
+Specifically the function range_timedomain() returns a
 linspace array of frequencies of the given number of points which will create
-a time domain result of the given time span when passed to the function timedomain()
-that does the IFFT transform on the frequency domain data.
+a time domain result of the given time span when passed to the function timedomain().  The function timedomain() does the actual IFFT transform 
+on the frequency domain data into the time domain.
 
 ## Reason for This Utility
 
