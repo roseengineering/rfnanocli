@@ -7,11 +7,9 @@ from struct import pack, unpack_from
 
 # defaults
 
-FSTART = 100e3
-FSTOP = 10.1e6
-POINTS = 101
-SAMPLES = 3
 CALFILE = 'cal'
+
+# configuration
  
 FORMAT_TEXT = ' {:25.6g} {:25.6g}'
 FORMAT_DB   = ' {:11.3f} {:9.3f}'
@@ -25,7 +23,14 @@ CALIBRATIONS = [ 'open', 'short', 'load', 'thru' ]
 def parse_args():
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument('command', metavar='command', nargs='*', help='command')
+    # value options 
+    parser.add_argument('--filename', default=CALFILE, help='calibration file')
+    parser.add_argument('--start', type=float, help='start frequency (Hz)')
+    parser.add_argument('--stop', type=float, help='stop frequency (Hz)')
+    parser.add_argument('--points', type=int, help='frequency points')
+    parser.add_argument('--samples', type=int, help='samples per frequency')
+    parser.add_argument('--device', type=int, help='select device number')
+    parser.add_argument('--segment', type=int, help='frequency points in segment')
     # calibration flags
     parser.add_argument('-i', '--init', action='store_true', help='initialize calibration')
     parser.add_argument('-o', '--open', action='store_true', help='open calibration')
@@ -34,17 +39,8 @@ def parse_args():
     parser.add_argument('-t', '--thru', action='store_true', help='thru calibration')
     # other flags
     parser.add_argument('-d', '--details',  action='store_true', help='show calibration details')
-    parser.add_argument('-r', '--raw', action='store_true', help='do not apply calibration')
     parser.add_argument('-1', '--one-port',  action='store_true', help='output in s1p format')
     parser.add_argument('--db', action='store_true', help='show in dB')
-    parser.add_argument('--average', action='store_true', help='take average of samples, not median')
-    # value options 
-    parser.add_argument('-f', '--filename', default=CALFILE, help='calibration file')
-    parser.add_argument('-n', '--samples', default=SAMPLES, type=int, help='samples per frequency')
-    parser.add_argument('--device', type=int, help='select device number')
-    parser.add_argument('--start', type=float, help='start frequency (Hz)')
-    parser.add_argument('--stop', type=float, help='stop frequency (Hz)')
-    parser.add_argument('--points', type=int, help='frequency points')
     args = parser.parse_args()
     return args
 
@@ -52,6 +48,9 @@ def parse_args():
 ###############################
 
 def nanovna(dev):
+    FSTART = 6348 
+    FSTOP = 2.7e9
+
     def send(ser, cmd):
         cmd += '\r'
         ser.write(cmd.encode())
@@ -83,20 +82,21 @@ def nanovna(dev):
             text = read(ser)
 
     def scan(ser, start, stop, points):
-        freq = np.linspace(start, stop, points)
         cmd = "scan {:d} {:d} {:d} 111".format(start, stop, points)
         text = command(ser, cmd)
         d = np.array([[ float(c) for c in ln.split() ] for ln in text.split('\n') ])
-        assert(np.all(freq == d[:,0]))
+        freq = np.linspace(start, stop, points)
+        assert(len(d) == points)
+        assert(start == d[0,0])
+        assert(stop == d[-1,0])
         return d[:,1::2] + 1j * d[:,2::2]
-
 
     def sweep(start, stop, points, samples):
         start, stop, points = int(start), int(stop), int(points)
-        assert(stop > start)
-        assert(points > 1)
         # points should also be <= 101, but dislord extended it to 301
-        assert(start >= 6348 and stop <= 2.7e9)
+        assert(points > 0)
+        assert(stop >= start)
+        assert(start >= FSTART and stop <= FSTOP)
         # since Si5351 multisynth divider ratio < 2048, 6348 is the min freq:
         # 26000000 {xtal} * 32 {pll_n} / (6348 {freq} << 6 {rdiv}) = 2047.9
         freq = np.linspace(start, stop, points)
@@ -110,12 +110,15 @@ def nanovna(dev):
         command(ser, "resume")  # resume and update sweep frequencies without calibration
         command(ser, "cal on")
         ser.close()
-        return freq, data
+        return data
 
     return sweep
 
 
 def saa2(dev):
+    POINTS = 255
+    FSTART = 10e3 
+    FSTOP = 4400e6
 
     # most of this saa2 code was taken from nanovna-saver
     # the si5351 is used up to 140Mhz
@@ -163,9 +166,9 @@ def saa2(dev):
 
     def sweep(start, stop, points, samples):
         start, stop, points = int(start), int(stop), int(points)
-        assert(stop > start)
-        assert(start >= 10e3 and stop <= 4400e6)
-        assert(points > 1 and points <= 255)
+        assert(points > 0 and points <= POINTS)
+        assert(stop >= start)
+        assert(start >= FSTART and stop <= FSTOP)
         freq = np.linspace(start, stop, points)
         data = []
         ser = serial.Serial(dev)
@@ -188,7 +191,7 @@ def saa2(dev):
             exit_usbmode(ser)
             ser.close()
       
-        return freq, data
+        return data
 
     return sweep
 
@@ -221,7 +224,7 @@ def getport(devnum):
 
 def calibrate(cal):
     # see Rytting, "Network analyzer error models and calibration methods", HP 1998
-    # e30 assumed to be zero
+    # e30 is assumed to be zero here
     gms = cal.get("short", -1)
     gmo = cal.get("open", 1)
     gml = cal.get("load", 0)
@@ -246,24 +249,41 @@ def cal_correct(cal, data):
     return np.array([ S11, S21 ]).T
 
 
+def cal_frequencies(cal):
+    return np.linspace(cal['start'], cal['stop'], cal['points'])
+
+
 def cal_interpolate(cal, start, stop, points):
-    freq = np.linspace(cal['start'], cal['stop'], cal['points'])
-    cal['start'] = start or cal['start']
-    cal['stop'] = stop or cal['stop'] 
-    cal['points'] = points or cal['points']
-    freq_new = np.linspace(cal['start'], cal['stop'], cal['points'])
-    for name in cal.keys():
-        data = cal[name]
-        if np.ndim(data) and data.size > 1:
-            cal[name] = np.interp(freq_new, freq, data)
+    if ((start and start != cal['start'])
+       or (stop and stop != cal['stop'])
+       or (points and points != cal['points'])):
+        freq = np.linspace(cal['start'], cal['stop'], cal['points'])
+        cal['start'] = start or cal['start']
+        cal['stop'] = stop or cal['stop'] 
+        cal['points'] = points or cal['points']
+        freq_new = cal_frequencies(cal=cal)
+        for name in cal.keys():
+            data = cal[name]
+            if np.ndim(data) and data.size > 1:
+                cal[name] = np.interp(freq_new, freq, data)
     return cal
 
 
-def cal_init(filename, start, stop, points):
+def cal_init(filename, start, stop, points, segment, samples):
+    FSTART = 100e3
+    FSTOP = 10.1e6
+    POINTS = 101
+    SAMPLES = 3
+
     start = start or FSTART
     stop = stop or FSTOP
+    samples = samples or SAMPLES
     points = points or POINTS
-    np.savez(filename, start=start, stop=stop, points=points)
+    segment = segment or POINTS
+    assert(stop >= start)
+    assert(segment > 0)
+    assert(points > 0)
+    np.savez(filename, start=start, stop=stop, points=points, segment=segment, samples=samples)
 
 
 def cal_load(filename):
@@ -275,23 +295,26 @@ def cal_load(filename):
     return dict(npzfile)
 
 
-def measure(cal, samples, average, device):
+def measure(cal, device):
     start = cal['start']
     stop = cal['stop']
     points = cal['points']
+    samples = cal['samples']
+    segment = cal['segment']
     sweep = getport(device)
-    freq, data = sweep(start, stop, points, samples)
-    if average:
-        data = np.average(data, axis=0)
-    else:
-        data = np.median(data, axis=0)
-    return freq, data
+    freq = cal_frequencies(cal)
+    ix = np.arange(segment, points, segment)
+    return np.concatenate([ 
+        np.median(sweep(np.round(d[0]), np.round(d[-1]), len(d), samples), axis=0) 
+        for d in np.split(freq, ix) ])
 
 
 def details(cal):
-    print('start:  {:.6g} MHz'.format(cal['start'] / 1e6))
-    print('stop:   {:.6g} MHz'.format(cal['stop'] / 1e6))
-    print('points: {:d}'.format(cal['points']))
+    print('start:   {:.6g} MHz'.format(cal['start'] / 1e6))
+    print('stop:    {:.6g} MHz'.format(cal['stop'] / 1e6))
+    print('points:  {:d}'.format(cal['points']))
+    print('segment: {:d}'.format(cal['segment']))
+    print('samples: {:d}'.format(cal['samples']))
     units = [ d for d in CALIBRATIONS if d in cal ]
     print('cals:   {}'.format(', '.join(units) if units else '<none>'))
 
@@ -325,10 +348,12 @@ def main():
 
     # initialize calibration
     if args.init:
-        cal_init(filename=args.filename, start=args.start, stop=args.stop, points=args.points)
+        cal_init(filename=args.filename, 
+                 start=args.start, stop=args.stop, points=args.points,
+                 segment=args.segment, samples=args.samples)
         return
 
-    # load calibration file
+    # load calibration
     cal = cal_load(filename=args.filename)
 
     # show details
@@ -336,24 +361,23 @@ def main():
         details(cal=cal)
         return
 
-    # interpolate
-    if not unit and (args.start or args.stop or args.points):
-        cal = cal_interpolate(cal=cal, start=args.start, stop=args.stop, points=args.points)
+    # update calibration
+    if args.samples: cal['samples'] = args.samples
 
-    # measure
-    freq, data = measure(cal=cal, samples=args.samples, average=args.average, device=args.device)
-
-    # calibrate
+    # save calibration
     if unit:
+        data = measure(cal=cal, device=device)
         cal[unit[0]] = data[:,0] 
         if unit[0] == 'thru':
             cal['thru21'] = data[:,1]
         np.savez(args.filename, **cal)
         return
 
-    # apply correction
-    if not args.raw: 
-        data = cal_correct(cal=cal, data=data)
+    # interpolate and measure
+    cal = cal_interpolate(cal=cal, start=args.start, stop=args.stop, points=args.points)
+    data = measure(cal=cal, device=args.device)
+    data = cal_correct(cal=cal, data=data)
+    freq = cal_frequencies(cal=cal)
 
     # write output
     show_touchstone(freq=freq, data=data, one_port=args.one_port, db_flag=args.db) 
@@ -363,14 +387,13 @@ def main():
 # public interface
 ####################
 
-def sweep(start=None, stop=None, points=None,
-          filename=CALFILE, samples=SAMPLES,
-          average=False, device=None):
+def sweep(start=None, stop=None, points=None, samples=None, device=None, filename=CALFILE):
     cal = cal_load(filename=filename)
-    if start or stop or points:
-        cal_interpolate(cal=cal, start=start, stop=stop, points=points)
-    freq, data = measure(cal=cal, samples=samples, average=average, device=device)
+    if samples: cal['samples'] = samples
+    cal = cal_interpolate(cal=cal, start=start, stop=stop, points=points)
+    data = measure(cal=cal, device=device)
     data = cal_correct(cal=cal, data=data)
+    freq = cal_frequencies(cal=cal)
     return freq, data
 
 
