@@ -27,10 +27,10 @@ def parse_args():
     parser.add_argument('--filename', default=CALFILE, help='calibration file')
     parser.add_argument('--start', type=float, help='start frequency (Hz)')
     parser.add_argument('--stop', type=float, help='stop frequency (Hz)')
-    parser.add_argument('--points', type=int, help='frequency points')
+    parser.add_argument('--points', type=int, help='frequency points in sweep')
+    parser.add_argument('--segment', type=int, help='frequency points in each sweep segment')
     parser.add_argument('--samples', type=int, help='samples per frequency')
     parser.add_argument('--device', type=int, help='select device number')
-    parser.add_argument('--segment', type=int, help='frequency points in segment')
     # calibration flags
     parser.add_argument('-i', '--init', action='store_true', help='initialize calibration')
     parser.add_argument('-o', '--open', action='store_true', help='open calibration')
