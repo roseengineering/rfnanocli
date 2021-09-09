@@ -239,24 +239,6 @@ $ python3 -c 'from nanocli import sweep; f,d = sweep(points=5); print(d)'
  [ 8.8881536e-02-3.125639e-03j  5.9300000e-06+8.244000e-06j]]
 ```
 
-
-The other two public functions provided are:
-
-```python
-freq_start, freq_stop = range_timedomain(freq_center, time_span, points)
-times, magnitude_db = timedomain(frequencies, gammas)
-```
-
-Use these functions to convert the S11 frequency measurements of
-a bandpass filter into the time domain.  
-
-Specifically the function range\_timedomain() returns the
-start and stop frequencies which will create
-a time domain result with the specified time span for the given 
-number of frequency points.
-The function timedomain() does the actual IFFT transform 
-on the frequency domain data into the time domain.
-
 ## Reason for This Utility
 
 I needed the ability to perform a calibrated measurement from the terminal
