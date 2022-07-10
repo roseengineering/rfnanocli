@@ -27,13 +27,13 @@ After calibration, just issue the following on the command line.
 
 
 ```
-$ python3 nanocli.py
+$ nanocli
 # MHz S MA R 50
-0.01             0.089135     0.476     3.9155e-06    58.994     3.9155e-06    58.994       0.089135     0.476
-2.5075            0.08893    -0.607     1.3271e-05   131.710     1.3271e-05   131.710        0.08893    -0.607
-5.005            0.088876    -1.012      1.278e-05    53.047      1.278e-05    53.047       0.088876    -1.012
-7.5025            0.08882    -1.434     2.4322e-05   100.367     2.4322e-05   100.367        0.08882    -1.434
-10               0.088929    -2.007     6.6082e-06   -71.453     6.6082e-06   -71.453       0.088929    -2.007
+0.01                    1    -0.005     0.00017708     1.765     0.00017708     1.765              1    -0.005
+2.5075            0.99979    -0.209     5.1072e-05   158.128     5.1072e-05   158.128        0.99979    -0.209
+5.005             0.99951    -0.399     4.4152e-05   -85.685     4.4152e-05   -85.685        0.99951    -0.399
+7.5025            0.99944    -0.590     5.0312e-06   117.518     5.0312e-06   117.518        0.99944    -0.590
+10                0.99941    -0.774     2.6698e-05   -36.176     2.6698e-05   -36.176        0.99941    -0.774
 ```
 
 
@@ -47,7 +47,7 @@ frequency sweep.
 
 
 ```
-$ python3 nanocli.py --init --start 10e3 --stop 10e6 --points 101
+$ nanocli --init --start 10e3 --stop 10e6 --points 101
 ```
 
 
@@ -55,12 +55,11 @@ Print details on the calibration file.
 
 
 ```
-$ python3 nanocli.py --details
+$ nanocli --info
 start:   0.01 MHz
 stop:    10 MHz
 points:  101
 segment: 101
-samples: 3
 cals:   <none>
 ```
 
@@ -69,23 +68,23 @@ According to the --details option, the calibration file currently has no calibra
 So lets perform the SOLT calibrations.
 
 ```
-$ python3 nanocli.py --open
-$ python3 nanocli.py --short
-$ python3 nanocli.py --load
-$ python3 nanocli.py --thru
+$ nanocli --open
+$ nanocli --short
+$ nanocli --load
+$ nanocli --thru
 ```
 
 Now run a sweep.  
 
 
 ```
-$ python3 nanocli.py --points 5
+$ nanocli --points 5
 # MHz S MA R 50
-0.01             0.089125     0.467     1.5611e-05    27.222     1.5611e-05    27.222       0.089125     0.467
-2.5075           0.088912    -0.588     5.6956e-06   150.334     5.6956e-06   150.334       0.088912    -0.588
-5.005            0.088862    -1.011     1.5714e-05    59.061     1.5714e-05    59.061       0.088862    -1.011
-7.5025           0.088835    -1.427      1.118e-05    95.214      1.118e-05    95.214       0.088835    -1.427
-10               0.088934    -2.029     8.2497e-06   -69.122     8.2497e-06   -69.122       0.088934    -2.029
+0.01              0.99996    -0.004     0.00012047   -28.434     0.00012047   -28.434        0.99996    -0.004
+2.5075             0.9998    -0.192     5.1572e-05   -91.993     5.1572e-05   -91.993         0.9998    -0.192
+5.005             0.99963    -0.403      6.231e-05  -167.956      6.231e-05  -167.956        0.99963    -0.403
+7.5025            0.99963    -0.580     3.2299e-05  -157.186     3.2299e-05  -157.186        0.99963    -0.580
+10                0.99934    -0.785     7.5902e-05   -79.865     7.5902e-05   -79.865        0.99934    -0.785
 ```
 
 
@@ -93,13 +92,13 @@ Return the results in dB.
 
 
 ```
-$ python3 nanocli.py --db --points 5
+$ nanocli --db --points 5
 # MHz S DB R 50
-0.01           -21.001     0.466     -96.890    72.624     -96.890    72.624     -21.001     0.466
-2.5075         -21.020    -0.586     -94.625   123.432     -94.625   123.432     -21.020    -0.586
-5.005          -21.024    -1.020     -95.747   100.558     -95.747   100.558     -21.024    -1.020
-7.5025         -21.030    -1.415     -99.224  -127.610     -99.224  -127.610     -21.030    -1.415
-10             -21.017    -2.031    -107.803   167.261    -107.803   167.261     -21.017    -2.031
+0.01            -0.000     0.002     -75.539   -26.599     -75.539   -26.599      -0.000     0.002
+2.5075          -0.000    -0.215    -104.084  -171.109    -104.084  -171.109      -0.000    -0.215
+5.005           -0.005    -0.406     -93.385   -10.947     -93.385   -10.947      -0.005    -0.406
+7.5025          -0.004    -0.593     -86.800    83.780     -86.800    83.780      -0.004    -0.593
+10              -0.006    -0.760     -98.618   -16.150     -98.618   -16.150      -0.006    -0.760
 ```
 
 
@@ -107,13 +106,13 @@ Write a s1p file to stdout.
 
 
 ```
-$ python3 nanocli.py -1 --db --points 5
+$ nanocli -1 --db --points 5
 # MHz S DB R 50
-0.01           -21.000     0.467
-2.5075         -21.021    -0.599
-5.005          -21.026    -1.014
-7.5025         -21.032    -1.448
-10             -21.019    -2.005
+0.01             0.000     0.003
+2.5075          -0.003    -0.221
+5.005           -0.005    -0.403
+7.5025          -0.003    -0.583
+10              -0.004    -0.777
 ```
 
 
@@ -125,15 +124,12 @@ and without any interpolation of the calibration data.
 
 ## How to Install
 
-First pip install the required python libraries using:
-
+First pip install the required python libraries by going into
+the top directory of the repo and running:
 
 ```
-$ pip install -r requirements.txt
-Requirement already satisfied: pyserial in /usr/local/lib/python3.9/dist-packages (from -r requirements.txt (line 1)) (3.5)
-Requirement already satisfied: numpy in /usr/lib/python3/dist-packages (from -r requirements.txt (line 2)) (1.19.5)
+$ pip install .
 ```
-
 
 
 ## Command Line Usage
@@ -142,28 +138,31 @@ The utility's command line usage is as follows:
 
 
 ```
-$ python3 nanocli.py --help
-usage: nanocli.py [-h] [--filename FILENAME] [--start START] [--stop STOP]
-                  [--points POINTS] [--segment SEGMENT] [--samples SAMPLES]
-                  [--device DEVICE] [-i] [-o] [-s] [-l] [-t] [-d] [-1] [--db]
+$ nanocli --help
+usage: nanocli [-h] [--filename FILENAME] [--start START] [--stop STOP]
+               [--points POINTS] [--segment SEGMENT] [--samples SAMPLES]
+               [--init] [--open] [--short] [--load] [--thru] [-d DEVICE] [-i]
+               [-l] [-1] [--db]
 
 optional arguments:
-  -h, --help           show this help message and exit
-  --filename FILENAME  calibration file (default: cal)
-  --start START        start frequency (Hz) (default: None)
-  --stop STOP          stop frequency (Hz) (default: None)
-  --points POINTS      frequency points in sweep (default: None)
-  --segment SEGMENT    frequency points in each sweep segment (default: None)
-  --samples SAMPLES    samples per frequency (default: None)
-  --device DEVICE      select device number (default: None)
-  -i, --init           initialize calibration (default: False)
-  -o, --open           open calibration (default: False)
-  -s, --short          short calibration (default: False)
-  -l, --load           load calibration (default: False)
-  -t, --thru           thru calibration (default: False)
-  -d, --details        show calibration details (default: False)
-  -1, --one-port       output in s1p format (default: False)
-  --db                 show in dB (default: False)
+  -h, --help            show this help message and exit
+  --filename FILENAME   calibration file (default: cal)
+  --start START         start frequency (Hz) (default: None)
+  --stop STOP           stop frequency (Hz) (default: None)
+  --points POINTS       frequency points in sweep (default: None)
+  --segment SEGMENT     frequency points in each sweep segment (default: None)
+  --samples SAMPLES     samples per frequency (default: 3)
+  --init                initialize calibration (default: False)
+  --open                open calibration (default: False)
+  --short               short calibration (default: False)
+  --load                load calibration (default: False)
+  --thru                thru calibration (default: False)
+  -d DEVICE, --device DEVICE
+                        device name (default: None)
+  -i, --info            show calibration info (default: False)
+  -l, --list            list devices (default: False)
+  -1, --one-port        output in s1p format (default: False)
+  --db                  show in dB (default: False)
 ```
 
 
@@ -213,9 +212,12 @@ formatted for a s1p touchstone file.
 
 ## Python Interface
 
-Import this library using import nanocli.  The most important function
-provided is called sweep.  It returns a (freq, data) tuple for the result.
-freq is an array of frequencies points and data is a 2xN array
+Import this library using import nanocli.  The function
+getvna is provided.  After passing it the cal file, 
+the device name, the start frequency, the stop frequency, and 
+the number of frequency points to measure, it returns a function which 
+performs the measurement returning a (freq, data) tuple result.
+freq is an array of frequencies points.  data is a 2xN array
 of s11 and s21 calibration corrected measurements.
 
 The interface for sweep is as follows.  Changing the range
@@ -224,20 +226,22 @@ start, stop or points will force an interpolation of the calibration
 data.
 
 ```python
-frequencies, gammas = sweep(start=None, stop=None, points=None, filename='cal', samples=3, average=False, device=None)
+fn = getvna(start=None, stop=None, points=None, device=None, filename='cal')
+freq, gamma = sweep(samples=3)
 ```
 
 For example:
 
 
 ```
-$ python3 -c 'from nanocli import sweep; f,d = sweep(points=5); print(d)'
-[[ 8.9124440e-02+7.088520e-04j  3.8100000e-06+1.867800e-05j]
- [ 8.8913552e-02-9.213630e-04j -9.2170000e-06+1.464600e-05j]
- [ 8.8833968e-02-1.579035e-03j  3.7710000e-06+1.145900e-05j]
- [ 8.8786024e-02-2.257115e-03j  9.2100000e-07+7.508000e-06j]
- [ 8.8881536e-02-3.125639e-03j  5.9300000e-06+8.244000e-06j]]
+$ python3 -c 'from nanocli import getvna; f,d = getvna(points=5)(); print(d)'
+[[ 9.99951959e-01+5.18392771e-05j  1.77253969e-04-8.00350681e-05j]
+ [ 9.99956489e-01-3.53892613e-03j  6.22402877e-06-3.27453017e-06j]
+ [ 9.99507785e-01-7.05986843e-03j -1.09514222e-05+1.62320212e-05j]
+ [ 9.99439120e-01-1.01066474e-02j -2.29533762e-05+6.32321462e-05j]
+ [ 9.99375045e-01-1.35249803e-02j  7.42822886e-06+6.88899308e-06j]]
 ```
+
 
 ## Reason for This Utility
 

@@ -1,23 +1,25 @@
 #!/usr/bin/python3
 
 import numpy as np
-import serial, os, sys
+import serial
+import os, sys, re
 from serial.tools import list_ports
 from struct import pack, unpack_from
 
-# defaults
-
-CALFILE = 'cal'
-
 # configuration
- 
+
 FORMAT_TEXT = ' {:25.6g} {:25.6g}'
 FORMAT_DB   = ' {:11.3f} {:9.3f}'
 FORMAT_MAG  = ' {:14.5g} {:9.3f}'
 
-# supported calibrations
+# calibration
 
 CALIBRATIONS = [ 'open', 'short', 'load', 'thru' ]
+
+# defaults
+
+SAMPLES = 3
+CALFILE = 'cal'
 
 
 def parse_args():
@@ -29,16 +31,17 @@ def parse_args():
     parser.add_argument('--stop', type=float, help='stop frequency (Hz)')
     parser.add_argument('--points', type=int, help='frequency points in sweep')
     parser.add_argument('--segment', type=int, help='frequency points in each sweep segment')
-    parser.add_argument('--samples', type=int, help='samples per frequency')
-    parser.add_argument('--device', type=int, help='select device number')
+    parser.add_argument('--samples', default=SAMPLES, type=int, help='samples per frequency')
     # calibration flags
-    parser.add_argument('-i', '--init', action='store_true', help='initialize calibration')
-    parser.add_argument('-o', '--open', action='store_true', help='open calibration')
-    parser.add_argument('-s', '--short', action='store_true', help='short calibration')
-    parser.add_argument('-l', '--load', action='store_true', help='load calibration')
-    parser.add_argument('-t', '--thru', action='store_true', help='thru calibration')
+    parser.add_argument('--init', action='store_true', help='initialize calibration')
+    parser.add_argument('--open', action='store_true', help='open calibration')
+    parser.add_argument('--short', action='store_true', help='short calibration')
+    parser.add_argument('--load', action='store_true', help='load calibration')
+    parser.add_argument('--thru', action='store_true', help='thru calibration')
     # other flags
-    parser.add_argument('-d', '--details',  action='store_true', help='show calibration details')
+    parser.add_argument('-d', '--device', help='device name')
+    parser.add_argument('-i', '--info',  action='store_true', help='show calibration info')
+    parser.add_argument('-l', '--list', action='store_true', help='list devices')
     parser.add_argument('-1', '--one-port',  action='store_true', help='output in s1p format')
     parser.add_argument('--db', action='store_true', help='show in dB')
     args = parser.parse_args()
@@ -50,6 +53,8 @@ def parse_args():
 def nanovna(dev):
     FSTART = 6348 
     FSTOP = 2.7e9
+    VID = 0x0483
+    PID = 0x5740
 
     def send(ser, cmd):
         cmd += '\r'
@@ -101,7 +106,7 @@ def nanovna(dev):
         # 26000000 {xtal} * 32 {pll_n} / (6348 {freq} << 6 {rdiv}) = 2047.9
         freq = np.linspace(start, stop, points)
         data = []
-        ser = serial.Serial(dev)
+        ser = serial.Serial(dev.device)
         clear_state(ser)
         command(ser, "cal off")
         for i in range(samples):
@@ -112,13 +117,16 @@ def nanovna(dev):
         ser.close()
         return data
 
-    return sweep
+    if dev.vid == VID and dev.pid == PID:
+        return sweep
 
 
 def saa2(dev):
     POINTS = 255
     FSTART = 10e3 
     FSTOP = 4400e6
+    VID = 0x04b4
+    PID = 0x0008
 
     # most of this saa2 code was taken from nanovna-saver
     # the si5351 is used up to 140Mhz
@@ -171,7 +179,7 @@ def saa2(dev):
         assert(start >= FSTART and stop <= FSTOP)
         freq = np.linspace(start, stop, points)
         data = []
-        ser = serial.Serial(dev)
+        ser = serial.Serial(dev.device)
         try:
             for n in range(samples):
                 clear_state(ser)
@@ -190,40 +198,49 @@ def saa2(dev):
         finally:
             exit_usbmode(ser)
             ser.close()
-      
         return data
 
-    return sweep
+    if dev.vid == VID and dev.pid == PID:
+        return sweep
 
 
 ###############################
 
-DEVICES = {
-    nanovna: [(0x0483, 0x5740)],
-    saa2: [(0x04b4, 0x0008)]
-};
+DEVICES = [ nanovna, saa2 ]
 
 
-def getport(devnum):
-    device_list = list_ports.comports()
-    d = []
-    for device in device_list:
-        for fn, address in DEVICES.items():
-            if (device.vid, device.pid) in address:
-                d.append((fn, device.device))
-    if len(d) == 0:
-        raise RuntimeError("NanoVNA device not found.")
-    if len(d) > 1 and (devnum is None or devnum < 1 or devnum > len(d)):
-        print("Which NanoVNA?  Use --device to select.", file=sys.stderr)
-        for i in range(len(d)):
-            print("{}. {}".format(i+1, d[i][1]), file=sys.stderr)
-        sys.exit(1)
-    fn, device = d[0 if devnum is None else devnum-1]
-    return fn(device)
+def probe_devices():
+    data = []
+    for fn in DEVICES:
+        for dev in list_ports.comports(include_links=True):
+            sweep = fn(dev)
+            if sweep is not None:
+                data.append((sweep, dev))
+    return data
+
+
+def list_devices(data=None):
+    data = data or probe_devices()
+    for i in range(len(data)):
+        fn, dev = data[i]
+        m = re.match(r'<function (\w+)', str(fn))
+        print("{}: {}".format(m.group(1), dev.device), file=sys.stderr)
+
+
+def getport(device):
+    data = probe_devices()
+    if len(data) == 0:
+        raise RuntimeError("No NanoVNA device found.")
+    for fn, dev in data:
+        if device is None or device == dev.device:
+            return fn
+    print("Use --device to select the NanoVNA to use:", file=sys.stderr)
+    list_devices(data)
+    sys.exit(1)
 
 
 def calibrate(cal):
-    # see Rytting, "Network analyzer error models and calibration methods", HP 1998
+    # see Rytting, "Network analyzer error models and calibration methods"
     # e30 is assumed to be zero here
     gms = cal.get("short", -1)
     gmo = cal.get("open", 1)
@@ -266,24 +283,20 @@ def cal_interpolate(cal, start, stop, points):
             data = cal[name]
             if np.ndim(data) and data.size > 1:
                 cal[name] = np.interp(freq_new, freq, data)
-    return cal
 
 
-def cal_init(filename, start, stop, points, segment, samples):
-    FSTART = 100e3
-    FSTOP = 10.1e6
+def cal_init(filename, start, stop, points, segment):
+    FSTART = 50e3
+    FSTOP = 10.05e6
     POINTS = 101
-    SAMPLES = 3
-
     start = start or FSTART
     stop = stop or FSTOP
-    samples = samples or SAMPLES
     points = points or POINTS
     segment = segment or POINTS
     assert(stop >= start)
     assert(segment > 0)
     assert(points > 0)
-    np.savez(filename, start=start, stop=stop, points=points, segment=segment, samples=samples)
+    np.savez(filename, start=start, stop=stop, points=points, segment=segment)
 
 
 def cal_load(filename):
@@ -295,13 +308,11 @@ def cal_load(filename):
     return dict(npzfile)
 
 
-def measure(cal, device):
+def measure(cal, sweep, samples):
     start = cal['start']
     stop = cal['stop']
     points = cal['points']
-    samples = cal['samples']
     segment = cal['segment']
-    sweep = getport(device)
     freq = cal_frequencies(cal)
     ix = np.arange(segment, points, segment)
     return np.concatenate([ 
@@ -309,12 +320,11 @@ def measure(cal, device):
         for d in np.split(freq, ix) ])
 
 
-def details(cal):
+def info(cal):
     print('start:   {:.6g} MHz'.format(cal['start'] / 1e6))
     print('stop:    {:.6g} MHz'.format(cal['stop'] / 1e6))
     print('points:  {:d}'.format(cal['points']))
     print('segment: {:d}'.format(cal['segment']))
-    print('samples: {:d}'.format(cal['samples']))
     units = [ d for d in CALIBRATIONS if d in cal ]
     print('cals:   {}'.format(', '.join(units) if units else '<none>'))
 
@@ -337,6 +347,11 @@ def show_touchstone(freq, data, one_port, db_flag):
 
 
 def main():
+    args = parse_args()
+    if args.list:
+        list_devices()
+        return
+
     # which calibration to run
     unit = [ d for d in CALIBRATIONS if args.__dict__.get(d) ]
 
@@ -350,23 +365,23 @@ def main():
     if args.init:
         cal_init(filename=args.filename, 
                  start=args.start, stop=args.stop, points=args.points,
-                 segment=args.segment, samples=args.samples)
+                 segment=args.segment)
         return
 
     # load calibration
     cal = cal_load(filename=args.filename)
 
     # show details
-    if args.details:
-        details(cal=cal)
+    if args.info:
+        info(cal=cal)
         return
 
-    # update calibration
-    if args.samples: cal['samples'] = args.samples
+    # open device
+    sweep = getport(args.device)
 
     # save calibration
     if unit:
-        data = measure(cal=cal, device=device)
+        data = measure(cal=cal, sweep=sweep, samples=args.samples)
         cal[unit[0]] = data[:,0] 
         if unit[0] == 'thru':
             cal['thru21'] = data[:,1]
@@ -374,8 +389,8 @@ def main():
         return
 
     # interpolate and measure
-    cal = cal_interpolate(cal=cal, start=args.start, stop=args.stop, points=args.points)
-    data = measure(cal=cal, device=args.device)
+    cal_interpolate(cal=cal, start=args.start, stop=args.stop, points=args.points)
+    data = measure(cal=cal, sweep=sweep, samples=args.samples)
     data = cal_correct(cal=cal, data=data)
     freq = cal_frequencies(cal=cal)
 
@@ -387,18 +402,17 @@ def main():
 # public interface
 ####################
 
-def sweep(start=None, stop=None, points=None, samples=None, device=None, filename=CALFILE):
+def getvna(start=None, stop=None, points=None, device=None, filename=CALFILE):
     cal = cal_load(filename=filename)
-    if samples: cal['samples'] = samples
-    cal = cal_interpolate(cal=cal, start=start, stop=stop, points=points)
-    data = measure(cal=cal, device=device)
-    data = cal_correct(cal=cal, data=data)
-    freq = cal_frequencies(cal=cal)
-    return freq, data
+    cal_interpolate(cal=cal, start=start, stop=stop, points=points)
+    sweep = getport(device)
+    def fn(samples=SAMPLES):
+        data = measure(cal=cal, sweep=sweep, samples=samples)
+        data = cal_correct(cal=cal, data=data)
+        freq = cal_frequencies(cal=cal)
+        return freq, data
+    return fn
 
 
-if __name__ == '__main__':
-    args = parse_args()
-    main()
 
 

@@ -3,12 +3,12 @@ import subprocess
 
 
 def spawn(command):
-    proc = subprocess.Popen("PYTHONPATH=. " + command, shell=True, stdout=subprocess.PIPE)
+    proc = subprocess.Popen('PYTHONPATH=src PATH=".:$PATH" ' + command, shell=True, stdout=subprocess.PIPE)
     proc.wait()
     return ''
 
 def run(command, language=""):
-    proc = subprocess.Popen("PYTHONPATH=. " + command, shell=True, stdout=subprocess.PIPE)
+    proc = subprocess.Popen('PYTHONPATH=src PATH=".:$PATH" ' + command, shell=True, stdout=subprocess.PIPE)
     proc.wait()
     buf = proc.stdout.read().decode()
     return f"""
@@ -46,8 +46,8 @@ settings.
 
 After calibration, just issue the following on the command line.
 
-{spawn("python3 nanocli.py --init --start 10e3 --stop 10e6 --points 5")}
-{run("python3 nanocli.py")}
+{spawn("nanocli --init --start 10e3 --stop 10e6 --points 5")}
+{run("nanocli")}
 
 If an error gets thrown, like not being able to find the device or ValueError, try again
 or reset your device.  None of the nanos have a perfect USB interface.
@@ -57,33 +57,33 @@ or reset your device.  None of the nanos have a perfect USB interface.
 First initialize the calibration file, setting the 
 frequency sweep.
 
-{run("python3 nanocli.py --init --start 10e3 --stop 10e6 --points 101")}
+{run("nanocli --init --start 10e3 --stop 10e6 --points 101")}
 
 Print details on the calibration file.
 
-{run("python3 nanocli.py --details")}
+{run("nanocli --info")}
 
 According to the --details option, the calibration file currently has no calibration data.
 So lets perform the SOLT calibrations.
 
 ```
-$ python3 nanocli.py --open
-$ python3 nanocli.py --short
-$ python3 nanocli.py --load
-$ python3 nanocli.py --thru
+$ nanocli --open
+$ nanocli --short
+$ nanocli --load
+$ nanocli --thru
 ```
 
 Now run a sweep.  
 
-{run("python3 nanocli.py --points 5")}
+{run("nanocli --points 5")}
 
 Return the results in dB.
 
-{run("python3 nanocli.py --db --points 5")}
+{run("nanocli --db --points 5")}
 
 Write a s1p file to stdout.
 
-{run("python3 nanocli.py -1 --db --points 5")}
+{run("nanocli -1 --db --points 5")}
 
 Passing the --points option above
 forces an interpolation of the calibration data
@@ -93,16 +93,19 @@ and without any interpolation of the calibration data.
 
 ## How to Install
 
-First pip install the required python libraries using:
+First pip install the required python libraries by going into
+the top directory of the repo and running:
 
-{run("pip install -r requirements.txt")}
+```
+$ pip install .
+```
 
 
 ## Command Line Usage
 
 The utility's command line usage is as follows:
 
-{run("python3 nanocli.py --help")}
+{run("nanocli --help")}
 
 
 ## On Calibration
@@ -150,9 +153,12 @@ formatted for a s1p touchstone file.
 
 ## Python Interface
 
-Import this library using import nanocli.  The most important function
-provided is called sweep.  It returns a (freq, data) tuple for the result.
-freq is an array of frequencies points and data is a 2xN array
+Import this library using import nanocli.  The function
+getvna is provided.  After passing it the cal file, 
+the device name, the start frequency, the stop frequency, and 
+the number of frequency points to measure, it returns a function which 
+performs the measurement returning a (freq, data) tuple result.
+freq is an array of frequencies points.  data is a 2xN array
 of s11 and s21 calibration corrected measurements.
 
 The interface for sweep is as follows.  Changing the range
@@ -161,12 +167,13 @@ start, stop or points will force an interpolation of the calibration
 data.
 
 ```python
-frequencies, gammas = sweep(start=None, stop=None, points=None, filename='cal', samples=3, average=False, device=None)
+fn = getvna(start=None, stop=None, points=None, device=None, filename='cal')
+freq, gamma = sweep(samples=3)
 ```
 
 For example:
 
-{run("python3 -c 'from nanocli import sweep; f,d = sweep(points=5); print(d)'")}
+{run("python3 -c 'from nanocli import getvna; f,d = getvna(points=5)(); print(d)'")}
 
 ## Reason for This Utility
 

@@ -1,6 +1,5 @@
 *.npz
 *.s2p
-*.sh
-res
+zoo
 makefile
-TODO.TXT
+nanocli
