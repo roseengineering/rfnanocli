@@ -77,13 +77,9 @@ Now run a sweep.
 
 {run("nanocli --points 5")}
 
-Return the results in dB.
-
-{run("nanocli --db --points 5")}
-
 Write a s1p file to stdout.
 
-{run("nanocli -1 --db --points 5")}
+{run("nanocli -1 --points 5")}
 
 Passing the --points option above
 forces an interpolation of the calibration data

@@ -9,17 +9,8 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 # configuration
 
-FORMAT_TEXT = ' {:25.6g} {:25.6g}'
-FORMAT_DB   = ' {:11.3f} {:9.3f}'
-FORMAT_MAG  = ' {:14.5g} {:9.3f}'
-
-# calibration
-
 CALIBRATIONS = [ 'open', 'short', 'load', 'thru' ]
-
-# defaults
-
-CALFILE = 'cal'
+CALFILE      = 'cal'
 
 
 def parse_args():
@@ -44,7 +35,6 @@ def parse_args():
     parser.add_argument('-i', '--info',  action='store_true', help='show calibration info')
     parser.add_argument('-l', '--list', action='store_true', help='list devices')
     parser.add_argument('-1', '--one-port',  action='store_true', help='output in s1p format')
-    parser.add_argument('--db', action='store_true', help='show in dB')
     args = parser.parse_args()
     return args
 
@@ -312,8 +302,10 @@ def cal_init(filename, start, stop, points, segment, samples, average, log):
 
 def cal_load(filename):
     try:
-        name, ext = os.path.splitext(filename)
-        npzfile = np.load('{}{}'.format(name, ext or '.npz'))
+        ext = os.path.splitext(filename)[1]
+        if ext.lower() != '.npz':
+            filename += '.npz'
+        npzfile = np.load(filename)
     except FileNotFoundError:
         raise RuntimeError('No calibration file, please initialize.')
     return dict(npzfile)
@@ -348,16 +340,12 @@ def info(cal):
     print('cals:   {}'.format(', '.join(units) if units else '<none>'))
 
 
-def show_touchstone(freq, data, one_port, db_flag):
-    print('# MHz S {} R 50'.format('DB' if db_flag else 'MA'))
-    db = lambda x: 20 * np.log10(abs(x))
+def show_touchstone(freq, data, one_port):
+    print('# MHz S MA R 50')
     for f, d in zip(freq, data):
-        if db_flag:
-            one = FORMAT_DB.format(db(d[0]), np.angle(d[0], deg=True))
-            two = FORMAT_DB.format(db(d[1]), np.angle(d[1], deg=True))
-        else:
-            one = FORMAT_MAG.format(abs(d[0]), np.angle(d[0], deg=True))
-            two = FORMAT_MAG.format(abs(d[1]), np.angle(d[1], deg=True))
+        FORMAT_MAG = ' {:14.5g} {:9.3f}'
+        one = FORMAT_MAG.format(abs(d[0]), np.angle(d[0], deg=True))
+        two = FORMAT_MAG.format(abs(d[1]), np.angle(d[1], deg=True))
         print('{:<10.6g}'.format(f/1e6), end='')
         if one_port:
             print('{}'.format(one))
@@ -414,7 +402,7 @@ def cli():
     data = cal_correct(cal=cal, data=data)
 
     # write output
-    show_touchstone(freq=freq, data=data, one_port=args.one_port, db_flag=args.db) 
+    show_touchstone(freq=freq, data=data, one_port=args.one_port)
 
 
 def main():
