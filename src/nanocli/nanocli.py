@@ -34,8 +34,8 @@ def parse_args():
     parser.add_argument('--samples', default=SAMPLES, type=int, help='samples per frequency')
     parser.add_argument('--nomedian', action='store_true', help='average samples')
     # calibration flags
-    parser.add_argument('--init', action='store_true', help='initialize linear calibration')
-    parser.add_argument('--initlog', action='store_true', help='initialize log calibration')
+    parser.add_argument('--init', action='store_true', help='initialize calibration')
+    parser.add_argument('--log', action='store_true', help='use log frequency spacing')
     parser.add_argument('--open', action='store_true', help='open calibration')
     parser.add_argument('--short', action='store_true', help='short calibration')
     parser.add_argument('--load', action='store_true', help='load calibration')
@@ -267,7 +267,7 @@ def cal_frequencies(cal):
     points = cal['points']
     segment = cal['segment']
     freq = np.linspace(start, stop, points)
-    if cal['logseg'] and points > segment:
+    if cal['log'] and points > segment:
         n = int(np.ceil(points / segment))
         seg = np.logspace(np.log10(start), np.log10(stop), n+1)
         freq = []
@@ -293,7 +293,7 @@ def cal_interpolate(cal, start, stop, points):
                 cal[name] = np.interp(freq_new, freq, data)
 
 
-def cal_init(filename, start, stop, points, segment, logseg):
+def cal_init(filename, start, stop, points, segment, log):
     FSTART = 10e3
     FSTOP = 10.01e6
     POINTS = 101
@@ -304,7 +304,7 @@ def cal_init(filename, start, stop, points, segment, logseg):
     assert(stop >= start)
     assert(segment > 0)
     assert(points > 0)
-    np.savez(filename, start=start, stop=stop, points=points, segment=segment, logseg=logseg)
+    np.savez(filename, start=start, stop=stop, points=points, segment=segment, log=log)
 
 
 def cal_load(filename):
@@ -323,8 +323,7 @@ def measure(cal, sweep, samples, nomedian):
     ix = np.arange(segment, points, segment)
     data = []
     for d in np.split(freq, ix):
-        err = np.linalg.norm(np.linspace(d[0], d[-1], len(d)) - d)
-        print('err', err, file=sys.stderr)
+        err = np.linalg.norm(d - np.linspace(d[0], d[-1], len(d)))
         assert(err < 1)
         s = sweep(np.round(d[0]), np.round(d[-1]), len(d), samples)
         s = np.average(s, axis=0) if nomedian else np.median(s, axis=0)
@@ -337,7 +336,7 @@ def info(cal):
     print('stop:    {:.6g} MHz'.format(cal['stop'] / 1e6))
     print('points:  {:d}'.format(cal['points']))
     print('segment: {:d}'.format(cal['segment']))
-    print('logseg:  {}'.format(cal['logseg']))
+    print('log:     {}'.format(cal['log']))
     units = [ d for d in CALIBRATIONS if d in cal ]
     print('cals:   {}'.format(', '.join(units) if units else '<none>'))
 
@@ -359,7 +358,7 @@ def show_touchstone(freq, data, one_port, db_flag):
             print('{}{}{}{}'.format(one, two, two, one))
 
 
-def main():
+def cli():
     args = parse_args()
     if args.list:
         list_devices()
@@ -375,10 +374,10 @@ def main():
         raise RuntimeError('Cannot both intialize and calibrate.')
 
     # initialize calibration
-    if args.init or args.initlog:
-        logseg = args.initlog
-        cal_init(filename=args.filename, start=args.start, stop=args.stop, points=args.points,
-                 segment=args.segment, logseg=logseg)
+    if args.init:
+        cal_init(filename=args.filename, 
+                 start=args.start, stop=args.stop, points=args.points,
+                 segment=args.segment, log=args.log)
         return
 
     # load calibration
@@ -408,6 +407,14 @@ def main():
 
     # write output
     show_touchstone(freq=freq, data=data, one_port=args.one_port, db_flag=args.db) 
+
+
+def main():
+    try:
+        cli()
+    except RuntimeError as e:
+        print(e, file=sys.stderr)
+        sys.exit(1)
 
 
 ####################
