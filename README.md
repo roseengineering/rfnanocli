@@ -29,11 +29,11 @@ After calibration, just issue the following on the command line.
 ```
 $ nanocli
 # MHz S MA R 50
-0.01              0.99999     0.000     0.00017986   -46.439     0.00017986   -46.439        0.99999     0.000
-2.5075            0.99958    -0.209     0.00052155   120.732     0.00052155   120.732        0.99958    -0.209
-5.005             0.99973    -0.402     0.00026202    81.597     0.00026202    81.597        0.99973    -0.402
-7.5025            0.99989    -0.578     0.00024885   119.681     0.00024885   119.681        0.99989    -0.578
-10                 0.9997    -0.790     0.00013108    31.714     0.00013108    31.714         0.9997    -0.790
+0.01                    1    -0.000     0.00016717   -30.503     0.00016717   -30.503              1    -0.000
+2.5075            0.99991    -0.215     1.7345e-05   -52.448     1.7345e-05   -52.448        0.99991    -0.215
+5.005             0.99949    -0.380     1.7454e-05   103.846     1.7454e-05   103.846        0.99949    -0.380
+7.5025            0.99938    -0.566     2.8688e-05   100.728     2.8688e-05   100.728        0.99938    -0.566
+10                0.99941    -0.755     6.2399e-05    38.568     6.2399e-05    38.568        0.99941    -0.755
 ```
 
 
@@ -60,6 +60,8 @@ start:   0.01 MHz
 stop:    10 MHz
 points:  101
 segment: 101
+samples: 3
+average: False
 log:     False
 cals:   <none>
 ```
@@ -81,11 +83,11 @@ Now run a sweep.
 ```
 $ nanocli --points 5
 # MHz S MA R 50
-0.01              0.99999     0.000     0.00014563   -23.627     0.00014563   -23.627        0.99999     0.000
-2.5075            0.99965    -0.188     7.7352e-05   -68.267     7.7352e-05   -68.267        0.99965    -0.188
-5.005             0.99993    -0.418     0.00011748   -83.739     0.00011748   -83.739        0.99993    -0.418
-7.5025            0.99981    -0.588     6.8046e-05   -16.402     6.8046e-05   -16.402        0.99981    -0.588
-10                0.99953    -0.783     0.00030509   -33.884     0.00030509   -33.884        0.99953    -0.783
+0.01                    1     0.000     0.00019456   -16.549     0.00019456   -16.549              1     0.000
+2.5075             0.9997    -0.207     4.0955e-06   134.972     4.0955e-06   134.972         0.9997    -0.207
+5.005              0.9995    -0.384     3.5709e-05  -132.236     3.5709e-05  -132.236         0.9995    -0.384
+7.5025            0.99929    -0.573     2.7137e-05   -44.612     2.7137e-05   -44.612        0.99929    -0.573
+10                0.99928    -0.767     2.2279e-05  -122.023     2.2279e-05  -122.023        0.99928    -0.767
 ```
 
 
@@ -95,11 +97,11 @@ Return the results in dB.
 ```
 $ nanocli --db --points 5
 # MHz S DB R 50
-0.01            -0.000    -0.000     -76.299   -11.284     -76.299   -11.284      -0.000    -0.000
-2.5075          -0.008    -0.182     -72.647     8.434     -72.647     8.434      -0.008    -0.182
-5.005            0.000    -0.404     -69.373    87.100     -69.373    87.100       0.000    -0.404
-7.5025          -0.003    -0.609     -72.606  -132.130     -72.606  -132.130      -0.003    -0.609
-10              -0.001    -0.768     -80.112   113.357     -80.112   113.357      -0.001    -0.768
+0.01             0.000     0.003     -74.530   -28.956     -74.530   -28.956       0.000     0.003
+2.5075          -0.001    -0.205     -88.021    89.882     -88.021    89.882      -0.001    -0.205
+5.005           -0.004    -0.377     -92.967  -137.741     -92.967  -137.741      -0.004    -0.377
+7.5025          -0.005    -0.571     -88.338    90.442     -88.338    90.442      -0.005    -0.571
+10              -0.006    -0.759    -113.257    11.093    -113.257    11.093      -0.006    -0.759
 ```
 
 
@@ -109,11 +111,11 @@ Write a s1p file to stdout.
 ```
 $ nanocli -1 --db --points 5
 # MHz S DB R 50
-0.01             0.000    -0.004
-2.5075           0.000    -0.198
-5.005           -0.003    -0.385
-7.5025          -0.006    -0.606
-10              -0.003    -0.793
+0.01            -0.000     0.001
+2.5075          -0.000    -0.203
+5.005           -0.004    -0.387
+7.5025          -0.005    -0.573
+10              -0.006    -0.747
 ```
 
 
@@ -141,9 +143,9 @@ The utility's command line usage is as follows:
 ```
 $ nanocli --help
 usage: nanocli [-h] [--filename FILENAME] [--start START] [--stop STOP]
-               [--points POINTS] [--segment SEGMENT] [--samples SAMPLES]
-               [--average] [--init] [--log] [--open] [--short] [--load]
-               [--thru] [-d DEVICE] [-i] [-l] [-1] [--db]
+               [--points POINTS] [--samples SAMPLES] [--init] [--open]
+               [--short] [--load] [--thru] [--average] [--log]
+               [--segment SEGMENT] [-d DEVICE] [-i] [-l] [-1] [--db]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -151,15 +153,15 @@ optional arguments:
   --start START         start frequency (Hz) (default: None)
   --stop STOP           stop frequency (Hz) (default: None)
   --points POINTS       frequency points in sweep (default: None)
-  --segment SEGMENT     frequency points in each sweep segment (default: None)
-  --samples SAMPLES     samples per frequency (default: 3)
-  --average             average samples rather than median (default: False)
+  --samples SAMPLES     samples per frequency (default: None)
   --init                initialize calibration (default: False)
-  --log                 use log frequency spacing (default: False)
   --open                open calibration (default: False)
   --short               short calibration (default: False)
   --load                load calibration (default: False)
   --thru                thru calibration (default: False)
+  --average             average samples rather than median (default: False)
+  --log                 use log frequency spacing (default: False)
+  --segment SEGMENT     frequency points in each sweep segment (default: None)
   -d DEVICE, --device DEVICE
                         device name (default: None)
   -i, --info            show calibration info (default: False)
@@ -238,11 +240,11 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import getvna; f,d = getvna(points=5)(); print(d)'
-[[ 1.00001359e+00-2.74647027e-05j  1.86512247e-04-7.49658793e-05j]
- [ 9.99984682e-01-4.36633825e-03j -1.11377798e-04+4.99067828e-05j]
- [ 9.99956310e-01-6.79001585e-03j -4.06429172e-05-8.34651291e-06j]
- [ 9.99127090e-01-1.02159120e-02j  2.12695450e-05-1.29263848e-04j]
- [ 9.99655306e-01-1.37744546e-02j  3.67676839e-05+6.44139946e-05j]]
+[[ 9.99969065e-01+5.38062304e-05j  1.38835981e-04-7.12992623e-05j]
+ [ 9.99864340e-01-3.35255917e-03j  1.78981572e-05-3.61735001e-05j]
+ [ 9.99521136e-01-6.71732426e-03j  1.35255978e-05+2.68453732e-05j]
+ [ 9.99423683e-01-9.88406688e-03j -4.32124361e-05+2.27922574e-05j]
+ [ 9.99168038e-01-1.29039697e-02j -2.87871808e-06-3.46153975e-05j]]
 ```
 
 

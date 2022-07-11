@@ -19,7 +19,6 @@ CALIBRATIONS = [ 'open', 'short', 'load', 'thru' ]
 
 # defaults
 
-SAMPLES = 3
 CALFILE = 'cal'
 
 
@@ -30,16 +29,16 @@ def parse_args():
     parser.add_argument('--start', type=float, help='start frequency (Hz)')
     parser.add_argument('--stop', type=float, help='stop frequency (Hz)')
     parser.add_argument('--points', type=int, help='frequency points in sweep')
-    parser.add_argument('--segment', type=int, help='frequency points in each sweep segment')
-    parser.add_argument('--samples', default=SAMPLES, type=int, help='samples per frequency')
-    parser.add_argument('--average', action='store_true', help='average samples rather than median')
+    parser.add_argument('--samples', type=int, help='samples per frequency')
     # calibration flags
     parser.add_argument('--init', action='store_true', help='initialize calibration')
-    parser.add_argument('--log', action='store_true', help='use log frequency spacing')
     parser.add_argument('--open', action='store_true', help='open calibration')
     parser.add_argument('--short', action='store_true', help='short calibration')
     parser.add_argument('--load', action='store_true', help='load calibration')
     parser.add_argument('--thru', action='store_true', help='thru calibration')
+    parser.add_argument('--average', action='store_true', help='average samples rather than median')
+    parser.add_argument('--log', action='store_true', help='use log frequency spacing')
+    parser.add_argument('--segment', type=int, help='frequency points in each sweep segment')
     # other flags
     parser.add_argument('-d', '--device', help='device name')
     parser.add_argument('-i', '--info',  action='store_true', help='show calibration info')
@@ -293,18 +292,22 @@ def cal_interpolate(cal, start, stop, points):
                 cal[name] = np.interp(freq_new, freq, data)
 
 
-def cal_init(filename, start, stop, points, segment, log):
+def cal_init(filename, start, stop, points, segment, samples, average, log):
     FSTART = 10e3
     FSTOP = 10.01e6
     POINTS = 101
+    SAMPLES = 3
     start = start or FSTART
     stop = stop or FSTOP
     points = points or POINTS
     segment = segment or POINTS
+    samples = samples or SAMPLES
     assert(stop >= start)
     assert(segment > 0)
     assert(points > 0)
-    np.savez(filename, start=start, stop=stop, points=points, segment=segment, log=log)
+    assert(samples > 0)
+    np.savez(filename, start=start, stop=stop, points=points, 
+             segment=segment, samples=samples, average=average, log=log)
 
 
 def cal_load(filename):
@@ -316,9 +319,11 @@ def cal_load(filename):
     return dict(npzfile)
 
 
-def measure(cal, sweep, samples, average):
+def measure(cal, sweep, samples):
     points = cal['points']
     segment = cal['segment']
+    average = cal['average']
+    samples = samples or cal['samples']
     freq = cal_frequencies(cal=cal)
     ix = np.arange(segment, points, segment)
     data = []
@@ -336,6 +341,8 @@ def info(cal):
     print('stop:    {:.6g} MHz'.format(cal['stop'] / 1e6))
     print('points:  {:d}'.format(cal['points']))
     print('segment: {:d}'.format(cal['segment']))
+    print('samples: {:d}'.format(cal['samples']))
+    print('average: {}'.format(cal['average']))
     print('log:     {}'.format(cal['log']))
     units = [ d for d in CALIBRATIONS if d in cal ]
     print('cals:   {}'.format(', '.join(units) if units else '<none>'))
@@ -377,7 +384,8 @@ def cli():
     if args.init:
         cal_init(filename=args.filename, 
                  start=args.start, stop=args.stop, points=args.points,
-                 segment=args.segment, log=args.log)
+                 samples=args.samples, segment=args.segment, 
+                 average=args.average, log=args.log)
         return
 
     # load calibration
@@ -393,7 +401,7 @@ def cli():
 
     # save calibration
     if unit:
-        freq, data = measure(cal=cal, sweep=sweep, samples=args.samples, average=args.average)
+        freq, data = measure(cal=cal, sweep=sweep, samples=args.samples)
         cal[unit[0]] = data[:,0]
         if unit[0] == 'thru':
             cal['thru21'] = data[:,1]
@@ -402,7 +410,7 @@ def cli():
 
     # interpolate and measure
     cal_interpolate(cal=cal, start=args.start, stop=args.stop, points=args.points)
-    freq, data = measure(cal=cal, sweep=sweep, samples=args.samples, average=args.average)
+    freq, data = measure(cal=cal, sweep=sweep, samples=args.samples)
     data = cal_correct(cal=cal, data=data)
 
     # write output
@@ -421,18 +429,16 @@ def main():
 # public interface
 ####################
 
-def getvna(start=None, stop=None, points=None, device=None, average=False, one_port=False, filename=CALFILE):
+def getvna(start=None, stop=None, points=None, device=None, one_port=False, filename=CALFILE):
     cal = cal_load(filename=filename)
     cal_interpolate(cal=cal, start=start, stop=stop, points=points)
     sweep = getport(device)
-    def fn(samples=SAMPLES):
-        freq, data = measure(cal=cal, sweep=sweep, samples=samples, average=average)
+    def fn(samples=None):
+        freq, data = measure(cal=cal, sweep=sweep, samples=samples)
         data = cal_correct(cal=cal, data=data)
         if one_port:
             data = data[:,0]
         return freq, data
     return fn
-
-
 
 
