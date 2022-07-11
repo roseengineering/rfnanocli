@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument('--points', type=int, help='frequency points in sweep')
     parser.add_argument('--segment', type=int, help='frequency points in each sweep segment')
     parser.add_argument('--samples', default=SAMPLES, type=int, help='samples per frequency')
-    parser.add_argument('--nomedian', action='store_true', help='average samples')
+    parser.add_argument('--average', action='store_true', help='average samples rather than median')
     # calibration flags
     parser.add_argument('--init', action='store_true', help='initialize calibration')
     parser.add_argument('--log', action='store_true', help='use log frequency spacing')
@@ -316,7 +316,7 @@ def cal_load(filename):
     return dict(npzfile)
 
 
-def measure(cal, sweep, samples, nomedian):
+def measure(cal, sweep, samples, average):
     points = cal['points']
     segment = cal['segment']
     freq = cal_frequencies(cal=cal)
@@ -326,7 +326,7 @@ def measure(cal, sweep, samples, nomedian):
         err = np.linalg.norm(d - np.linspace(d[0], d[-1], len(d)))
         assert(err < 1)
         s = sweep(np.round(d[0]), np.round(d[-1]), len(d), samples)
-        s = np.average(s, axis=0) if nomedian else np.median(s, axis=0)
+        s = np.average(s, axis=0) if average else np.median(s, axis=0)
         data.append(s)
     return freq, np.concatenate(data)
 
@@ -393,7 +393,7 @@ def cli():
 
     # save calibration
     if unit:
-        freq, data = measure(cal=cal, sweep=sweep, samples=args.samples, nomedian=args.nomedian)
+        freq, data = measure(cal=cal, sweep=sweep, samples=args.samples, average=args.average)
         cal[unit[0]] = data[:,0]
         if unit[0] == 'thru':
             cal['thru21'] = data[:,1]
@@ -402,7 +402,7 @@ def cli():
 
     # interpolate and measure
     cal_interpolate(cal=cal, start=args.start, stop=args.stop, points=args.points)
-    freq, data = measure(cal=cal, sweep=sweep, samples=args.samples, nomedian=args.nomedian)
+    freq, data = measure(cal=cal, sweep=sweep, samples=args.samples, average=args.average)
     data = cal_correct(cal=cal, data=data)
 
     # write output
@@ -421,13 +421,15 @@ def main():
 # public interface
 ####################
 
-def getvna(start=None, stop=None, points=None, device=None, nomedian=False, filename=CALFILE):
+def getvna(start=None, stop=None, points=None, device=None, average=False, one_port=False, filename=CALFILE):
     cal = cal_load(filename=filename)
     cal_interpolate(cal=cal, start=start, stop=stop, points=points)
     sweep = getport(device)
     def fn(samples=SAMPLES):
-        freq, data = measure(cal=cal, sweep=sweep, samples=samples, nomedian=nomedian)
+        freq, data = measure(cal=cal, sweep=sweep, samples=samples, average=average)
         data = cal_correct(cal=cal, data=data)
+        if one_port:
+            data = data[:,0]
         return freq, data
     return fn
 
