@@ -29,11 +29,11 @@ After calibration, just issue the following on the command line.
 ```
 $ nanocli
 # MHz S MA R 50
-0.01                    1    -0.001     0.00016205   -29.709     0.00016205   -29.709              1    -0.001
-2.5075             0.9997    -0.195     4.6446e-05    26.198     4.6446e-05    26.198         0.9997    -0.195
-5.005             0.99957    -0.387     4.0401e-05  -101.379     4.0401e-05  -101.379        0.99957    -0.387
-7.5025            0.99941    -0.579      2.237e-05  -175.846      2.237e-05  -175.846        0.99941    -0.579
-10                0.99957    -0.770     4.4616e-05  -130.526     4.4616e-05  -130.526        0.99957    -0.770
+0.01              0.99999     0.000     0.00016946   -29.786     0.00016946   -29.786        0.99999     0.000
+2.5075            0.99968    -0.157     0.00090342    80.356     0.00090342    80.356        0.99968    -0.157
+5.005             0.99993    -0.348      0.0007697   -95.687      0.0007697   -95.687        0.99993    -0.348
+7.5025            0.99973    -0.560     0.00023922    89.016     0.00023922    89.016        0.99973    -0.560
+10                0.99932    -0.816     0.00031214    51.657     0.00031214    51.657        0.99932    -0.816
 ```
 
 
@@ -61,9 +61,9 @@ stop:    10 MHz
 points:  101
 segment: 101
 samples: 3
-average: False
-log:     False
-cals:   <none>
+average: false
+log:     false
+cals:    <none>
 ```
 
 
@@ -83,11 +83,11 @@ Now run a sweep.
 ```
 $ nanocli --points 5
 # MHz S MA R 50
-0.01                    1     0.001     0.00017226   -27.352     0.00017226   -27.352              1     0.001
-2.5075            0.99978    -0.210     6.8268e-05   -75.971     6.8268e-05   -75.971        0.99978    -0.210
-5.005             0.99938    -0.393     4.1963e-05   -98.998     4.1963e-05   -98.998        0.99938    -0.393
-7.5025            0.99942    -0.595     4.5497e-05   -70.027     4.5497e-05   -70.027        0.99942    -0.595
-10                0.99956    -0.755     8.7168e-05   125.094     8.7168e-05   125.094        0.99956    -0.755
+0.01                    1     0.001     0.00018589   -32.255     0.00018589   -32.255              1     0.001
+2.5075             0.9999    -0.263     0.00022359  -155.273     0.00022359  -155.273         0.9999    -0.263
+5.005             0.99886    -0.319     0.00050646    66.798     0.00050646    66.798        0.99886    -0.319
+7.5025            0.99901    -0.565     3.6397e-05   -10.997     3.6397e-05   -10.997        0.99901    -0.565
+10                0.99964    -0.758     9.9414e-05  -153.155     9.9414e-05  -153.155        0.99964    -0.758
 ```
 
 
@@ -97,11 +97,11 @@ Write a s1p file to stdout.
 ```
 $ nanocli -1 --points 5
 # MHz S MA R 50
-0.01               1.0001     0.003
-2.5075            0.99973    -0.205
-5.005             0.99958    -0.401
-7.5025            0.99934    -0.588
-10                0.99955    -0.763
+0.01              0.99998    -0.002
+2.5075            0.99923    -0.250
+5.005              1.0001    -0.411
+7.5025            0.99947    -0.547
+10                0.99966    -0.741
 ```
 
 
@@ -129,25 +129,29 @@ The utility's command line usage is as follows:
 ```
 $ nanocli --help
 usage: nanocli [-h] [--filename FILENAME] [--start START] [--stop STOP]
-               [--points POINTS] [--samples SAMPLES] [--init] [--open]
-               [--short] [--load] [--thru] [--average] [--log]
-               [--segment SEGMENT] [-d DEVICE] [-i] [-l] [-1]
+               [--points POINTS] [--samples SAMPLES] [--init]
+               [--segment SEGMENT] [--average] [--log] [--open] [--short]
+               [--load] [--thru] [--server] [--host HOST] [--port PORT]
+               [-d DEVICE] [-i] [-l] [-1]
 
 optional arguments:
   -h, --help            show this help message and exit
-  --filename FILENAME   calibration file (default: cal)
+  --filename FILENAME   calibration file (default: cal.npz)
   --start START         start frequency (Hz) (default: None)
   --stop STOP           stop frequency (Hz) (default: None)
   --points POINTS       frequency points in sweep (default: None)
   --samples SAMPLES     samples per frequency (default: None)
   --init                initialize calibration (default: False)
+  --segment SEGMENT     frequency points in each sweep segment (default: None)
+  --average             average samples rather than median (default: False)
+  --log                 use log frequency spacing (default: False)
   --open                open calibration (default: False)
   --short               short calibration (default: False)
   --load                load calibration (default: False)
   --thru                thru calibration (default: False)
-  --average             average samples rather than median (default: False)
-  --log                 use log frequency spacing (default: False)
-  --segment SEGMENT     frequency points in each sweep segment (default: None)
+  --server              enter REST server mode (default: False)
+  --host HOST           REST server host name (default: 0.0.0.0)
+  --port PORT           REST server port number (default: 8080)
   -d DEVICE, --device DEVICE
                         device name (default: None)
   -i, --info            show calibration info (default: False)
@@ -225,12 +229,13 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import getvna; f,d = getvna(points=5)(); print(d)'
-[[ 1.00004053e+00+1.09104440e-05j  1.34607777e-04-1.03579834e-04j]
- [ 9.99947548e-01-3.66589241e-03j  4.82592732e-05+1.26874074e-05j]
- [ 9.99438643e-01-6.82144705e-03j  1.65728852e-05-7.53719360e-06j]
- [ 9.99459743e-01-9.98111162e-03j -3.32333148e-05+2.57370993e-05j]
- [ 9.99396026e-01-1.35567850e-02j -6.63278624e-05-1.43684447e-05j]]
+[[ 9.99969363e-01-3.41171399e-05j  2.04826705e-04-1.61565840e-05j]
+ [ 9.99873877e-01-2.22244672e-03j -1.10466965e-04-1.25451013e-04j]
+ [ 1.00001419e+00-5.81184775e-03j -3.05408612e-04+6.03068620e-05j]
+ [ 1.00000989e+00-1.02572078e-02j  1.34262256e-04+1.35331415e-04j]
+ [ 9.99870121e-01-1.33099873e-02j -2.13925727e-04+5.97222708e-04j]]
 ```
+
 
 
 ## Reason for This Utility
@@ -263,6 +268,6 @@ For the NanoVNA, only versions 0.7.1 and higher of the firmware are supported.
 See the papers on Network Analyzer Error Models and Calibration Methods
 by Doug Rytting.
 
-![](cal.png)
+![](res/cal.png)
 
 

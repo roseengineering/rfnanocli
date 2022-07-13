@@ -171,6 +171,7 @@ For example:
 
 {run("python3 -c 'from nanocli import getvna; f,d = getvna(points=5)(); print(d)'")}
 
+
 ## Reason for This Utility
 
 I needed the ability to perform a calibrated measurement from the terminal
@@ -201,7 +202,7 @@ For the NanoVNA, only versions 0.7.1 and higher of the firmware are supported.
 See the papers on Network Analyzer Error Models and Calibration Methods
 by Doug Rytting.
 
-![](cal.png)
+![](res/cal.png)
 
 """)
 

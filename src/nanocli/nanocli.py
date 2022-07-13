@@ -1,16 +1,17 @@
 #!/usr/bin/python3
 
-import numpy as np
+import os, sys, re, shutil
 import serial
-import os, sys, re
+import numpy as np
 from serial.tools import list_ports
 from struct import pack, unpack_from
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # configuration
 
 CALIBRATIONS = [ 'open', 'short', 'load', 'thru' ]
-CALFILE      = 'cal'
+CALFILE      = 'cal.npz'
 
 
 def parse_args():
@@ -21,15 +22,20 @@ def parse_args():
     parser.add_argument('--stop', type=float, help='stop frequency (Hz)')
     parser.add_argument('--points', type=int, help='frequency points in sweep')
     parser.add_argument('--samples', type=int, help='samples per frequency')
-    # calibration flags
+    # calibration
     parser.add_argument('--init', action='store_true', help='initialize calibration')
+    parser.add_argument('--segment', type=int, help='frequency points in each sweep segment')
+    parser.add_argument('--average', action='store_true', help='average samples rather than median')
+    parser.add_argument('--log', action='store_true', help='use log frequency spacing')
+    # SOLT
     parser.add_argument('--open', action='store_true', help='open calibration')
     parser.add_argument('--short', action='store_true', help='short calibration')
     parser.add_argument('--load', action='store_true', help='load calibration')
     parser.add_argument('--thru', action='store_true', help='thru calibration')
-    parser.add_argument('--average', action='store_true', help='average samples rather than median')
-    parser.add_argument('--log', action='store_true', help='use log frequency spacing')
-    parser.add_argument('--segment', type=int, help='frequency points in each sweep segment')
+    # rest server
+    parser.add_argument('--server', action='store_true', help='enter REST server mode')
+    parser.add_argument('--host', default='0.0.0.0', help='REST server host name')
+    parser.add_argument('--port', default=8080, type=int, help='REST server port number')
     # other flags
     parser.add_argument('-d', '--device', help='device name')
     parser.add_argument('-i', '--info',  action='store_true', help='show calibration info')
@@ -39,10 +45,240 @@ def parse_args():
     return args
 
 
+def rect(x, y, dtype):
+    if dtype == 'db' or dtype =='ma':
+        x = 10**(x / 20) if dtype == 'db' else x
+        value = x * np.exp(1j * np.deg2rad(y))
+    elif dtype == 'ri':
+        value = x + 1j * y
+    else:
+        raise ValueError
+    return value
+
+
+def prefix(unit):
+    if unit == 'hz':
+        return 1
+    elif unit == 'khz':
+        return 1e3
+    elif unit == 'mhz':
+        return 1e6
+    elif unit == 'ghz':
+        return 1e9
+    else:
+        raise ValueError
+
+
+def read_touchstone(text):
+    freq = []
+    data = []
+    dtype = None
+    buf = ''
+    f = iter(text.splitlines())
+    while True:
+        ln = next(f, None)
+        if ln is not None:
+            ln = ln.rstrip()
+            if not ln or ln[0] == '!':
+                continue
+            # handle header line
+            if ln[0] == '#':
+                d = ln[1:].lower().split()
+                if d[1] != 's' or d[3] != 'r' or float(d[4]) != 50:
+                    raise ValueError
+                scale = prefix(d[0])
+                dtype = d[2]
+                continue
+            # handle line continuation
+            if ln[0] == ' ':
+                buf += ln
+                continue
+        if buf:
+            d = [ float(d) for d in buf.split() ]
+            freq.append(d[0] * scale)
+            d = [ rect(d[i], d[i+1], dtype=dtype) for i in range(1, len(d), 2) ]
+            n = int(np.sqrt(len(d)))
+            d = np.array(d).reshape(n, n)
+            data.append(d.T if d.size == 4 else d)
+        if ln is None:
+            break
+        buf = ln
+    freq = np.array(freq)
+    data = np.array(data)
+    return freq, data
+
+
+def afloat(text):
+    try:
+        return float(text) 
+    except ValueError:
+        pass
+
+def aint(text):
+    try:
+        return int(text) 
+    except ValueError:
+        pass
+
+def abool(text):
+    text = text.strip().lower()
+    if text == 'y' or text == 'yes' or text == 'true':
+        return True
+    if text == 'n' or text == 'no' or text == 'false':
+        return False
+
+def tobool(val):
+    if val is None:
+        return 'null'
+    return 'true' if val else 'false'
+
+def tostr(val):
+    if val is None:
+        return 'null'
+    return str(val)
+
+def atoken(text):
+    text = text.strip()
+    if re.fullmatch(r'[\w_]+', text):
+        return text
+
+
+def serverfactory(sweep):
+    kw = {}
+
+    class Server(BaseHTTPRequestHandler):
+
+        def text_response(self, data='OK', code=200):
+            data = data.rstrip().encode() + b'\n'
+            self.send_response(code)
+            self.send_header('Content-Type', 'text/plain')
+            self.send_header('Content-Length', len(data))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_HEAD(self):
+            self.send_response(200)
+            self.end_headers()
+
+        def do_POST(self):
+            self.do_PUT()
+
+        def do_PUT(self):
+            length = int(self.headers.get('Content-Length', 0))
+            text = self.rfile.read(length).decode().strip()
+            if self.path == '/load':
+                value = atoken(text)
+                if value is not None:
+                    shutil.copyfile(value + '.npz', CALFILE) 
+                    return self.text_response()
+            elif self.path == '/save':
+                value = atoken(text)
+                if value is not None:
+                    shutil.copyfile(CALFILE, value + '.npz') 
+                    return self.text_response()
+            elif self.path == '/start':
+                value = afloat(text)
+                if value is not None:
+                    kw['start'] = value
+                    return self.text_response()
+            elif self.path == '/stop':
+                value = afloat(text)
+                if value is not None:
+                    kw['stop'] = value
+                    return self.text_response()
+            elif self.path == '/points':
+                value = aint(text)
+                if value is not None:
+                    kw['points'] = value
+                    return self.text_response()
+            elif self.path == '/samples':
+                value = aint(text)
+                if value is not None:
+                    kw['samples'] = value
+                    return self.text_response()
+            elif self.path == '/segment':
+                value = aint(text)
+                if value is not None:
+                    kw['segment'] = value
+                    return self.text_response()
+            elif self.path == '/average':
+                value = abool(text)
+                if value is not None:
+                    kw['segment'] = value
+                    return self.text_response()
+            elif self.path == '/log':
+                value = abool(text)
+                if value is not None:
+                    kw['log'] = value
+                    return self.text_response()
+            else:
+                return self.text_response('Not Found', code=404)
+            self.text_response('Bad Request', code=400)
+
+        def do_GET(self):
+            nonlocal kw
+            start = kw.get('start')
+            stop = kw.get('stop')
+            points = kw.get('points')
+            samples = kw.get('samples')
+            segment = kw.get('segment')
+            average = kw.get('average')
+            log = kw.get('log')
+            if self.path == '/info':
+                buf = do_info()
+                return self.text_response(buf)
+            elif self.path == '/':
+                buf = do_sweep(sweep=sweep, start=start, stop=stop, 
+                               points=points, samples=samples)
+                return self.text_response(buf)
+            elif self.path == '/gamma':
+                buf = do_sweep(sweep=sweep, start=start, stop=stop, 
+                               points=points, samples=samples, one_port=True)
+                return self.text_response(buf)
+            elif self.path == '/init':
+                cal_init(start=start, stop=stop, points=points, samples=samples, 
+                         segment=segment, average=average, log=log)
+                return self.text_response()
+            elif self.path == '/open':
+                do_calibration(sweep=sweep, unit='open', samples=samples)
+                return self.text_response()
+            elif self.path == '/short':
+                do_calibration(sweep=sweep, unit='short', samples=samples)
+                return self.text_response()
+            elif self.path == '/load':
+                do_calibration(sweep=sweep, unit='load', samples=samples)
+                return self.text_response()
+            elif self.path == '/thru':
+                do_calibration(sweep=sweep, unit='thru', samples=samples)
+                return self.text_response()
+            elif self.path == '/reset':
+                kw = {}
+                return self.text_response()
+            elif self.path == '/start':
+                return self.text_response(tostr(start))
+            elif self.path == '/stop':
+                return self.text_response(tostr(stop))
+            elif self.path == '/points':
+                return self.text_response(tostr(points))
+            elif self.path == '/samples':
+                return self.text_response(tostr(samples))
+            elif self.path == '/segment':
+                return self.text_response(tostr(segment))
+            elif self.path == '/average':
+                return self.text_response(tobool(average))
+            elif self.path == '/log':
+                return self.text_response(tobool(log))
+            else:
+                return self.text_response('Not Found', code=404)
+            self.text_response('Bad Request', code=400)
+
+    return Server
+
+
 ###############################
 
 def nanovna(dev):
-    FSTART = 6348 
+    FSTART = 6348  # si5351 limit
     FSTOP = 2.7e9
     VID = 0x0483
     PID = 0x5740
@@ -282,7 +518,7 @@ def cal_interpolate(cal, start, stop, points):
                 cal[name] = np.interp(freq_new, freq, data)
 
 
-def cal_init(filename, start, stop, points, segment, samples, average, log):
+def cal_init(start, stop, points, segment, samples, average, log, filename=CALFILE):
     FSTART = 10e3
     FSTOP = 10.01e6
     POINTS = 101
@@ -292,6 +528,8 @@ def cal_init(filename, start, stop, points, segment, samples, average, log):
     points = points or POINTS
     segment = segment or POINTS
     samples = samples or SAMPLES
+    average = bool(average)
+    log = bool(log)
     assert(stop >= start)
     assert(segment > 0)
     assert(points > 0)
@@ -328,33 +566,53 @@ def measure(cal, sweep, samples):
     return freq, np.concatenate(data)
 
 
-def info(cal):
-    print('start:   {:.6g} MHz'.format(cal['start'] / 1e6))
-    print('stop:    {:.6g} MHz'.format(cal['stop'] / 1e6))
-    print('points:  {:d}'.format(cal['points']))
-    print('segment: {:d}'.format(cal['segment']))
-    print('samples: {:d}'.format(cal['samples']))
-    print('average: {}'.format(cal['average']))
-    print('log:     {}'.format(cal['log']))
-    units = [ d for d in CALIBRATIONS if d in cal ]
-    print('cals:   {}'.format(', '.join(units) if units else '<none>'))
-
-
-def show_touchstone(freq, data, one_port):
-    print('# MHz S MA R 50')
+def touchstone(freq, data, one_port):
+    line = []
+    line.append('# MHz S MA R 50')
     for f, d in zip(freq, data):
-        FORMAT_MAG = ' {:14.5g} {:9.3f}'
-        one = FORMAT_MAG.format(abs(d[0]), np.angle(d[0], deg=True))
-        two = FORMAT_MAG.format(abs(d[1]), np.angle(d[1], deg=True))
-        print('{:<10.6g}'.format(f/1e6), end='')
+        entry = ' {:14.5g} {:9.3f}'
+        one = entry.format(abs(d[0]), np.angle(d[0], deg=True))
+        two = entry.format(abs(d[1]), np.angle(d[1], deg=True))
         if one_port:
-            print('{}'.format(one))
+            line.append('{:<10.6g}{}'.format(f/1e6, one))
         else:
-            print('{}{}{}{}'.format(one, two, two, one))
+            line.append('{:<10.6g}{}{}{}{}'.format(f/1e6, one, two, two, one))
+    return '\n'.join(line)
 
 
-def cli():
-    args = parse_args()
+def do_sweep(sweep, start, stop, points, samples, one_port=False, filename=CALFILE):
+    cal = cal_load(filename)
+    cal_interpolate(cal=cal, start=start, stop=stop, points=points)
+    freq, data = measure(cal=cal, sweep=sweep, samples=samples)
+    data = cal_correct(cal=cal, data=data)
+    return touchstone(freq=freq, data=data, one_port=one_port)
+
+
+def do_calibration(sweep, unit, samples, filename=CALFILE):
+    cal = cal_load(filename)
+    freq, data = measure(cal=cal, sweep=sweep, samples=samples)
+    cal[unit] = data[:,0]
+    if unit == 'thru':
+        cal['thru21'] = data[:,1]
+    np.savez(filename, **cal)
+
+
+def do_info(filename=CALFILE):
+    cal = cal_load(filename)
+    line = []
+    line.append('start:   {:.6g} MHz'.format(cal['start'] / 1e6))
+    line.append('stop:    {:.6g} MHz'.format(cal['stop'] / 1e6))
+    line.append('points:  {:d}'.format(cal['points']))
+    line.append('segment: {:d}'.format(cal['segment']))
+    line.append('samples: {:d}'.format(cal['samples']))
+    line.append('average: {}'.format(tobool(cal['average'])))
+    line.append('log:     {}'.format(tobool(cal['log'])))
+    units = [ d for d in CALIBRATIONS if d in cal ]
+    line.append('cals:    {}'.format(', '.join(units) if units else '<none>'))
+    return '\n'.join(line)
+
+
+def cli(args):
     if args.list:
         list_devices()
         return
@@ -370,63 +628,53 @@ def cli():
 
     # initialize calibration
     if args.init:
-        cal_init(filename=args.filename, 
-                 start=args.start, stop=args.stop, points=args.points,
+        cal_init(start=args.start, stop=args.stop, points=args.points,
                  samples=args.samples, segment=args.segment, 
-                 average=args.average, log=args.log)
+                 average=args.average, log=args.log, filename=args.filename)
         return
-
-    # load calibration
-    cal = cal_load(filename=args.filename)
 
     # show details
     if args.info:
-        info(cal=cal)
+        buf = do_info(filename=args.filename)
+        print(buf)
         return
 
     # open device
-    sweep = getport(args.device)
-
-    # save calibration
+    sweep = getport(device=args.device)
     if unit:
-        freq, data = measure(cal=cal, sweep=sweep, samples=args.samples)
-        cal[unit[0]] = data[:,0]
-        if unit[0] == 'thru':
-            cal['thru21'] = data[:,1]
-        np.savez(args.filename, **cal)
-        return
+        do_calibration(sweep=sweep, unit=unit[0], samples=args.samples,
+                       filename=args.filename)
+    else:
+        buf = do_sweep(sweep=sweep, start=args.start, stop=args.stop, 
+                       points=args.points, samples=args.samples, 
+                       one_port=args.one_port, filename=args.filename)
+        print(buf)
 
-    # interpolate and measure
-    cal_interpolate(cal=cal, start=args.start, stop=args.stop, points=args.points)
-    freq, data = measure(cal=cal, sweep=sweep, samples=args.samples)
-    data = cal_correct(cal=cal, data=data)
-
-    # write output
-    show_touchstone(freq=freq, data=data, one_port=args.one_port)
-
-
-def main():
-    try:
-        cli()
-    except RuntimeError as e:
-        print(e, file=sys.stderr)
-        sys.exit(1)
-
-
-####################
-# public interface
-####################
 
 def getvna(start=None, stop=None, points=None, device=None, one_port=False, filename=CALFILE):
-    cal = cal_load(filename=filename)
+    cal = cal_load(filename)
     cal_interpolate(cal=cal, start=start, stop=stop, points=points)
     sweep = getport(device)
     def fn(samples=None):
         freq, data = measure(cal=cal, sweep=sweep, samples=samples)
         data = cal_correct(cal=cal, data=data)
-        if one_port:
-            data = data[:,0]
-        return freq, data
+        return freq, data[:,0] if one_port else data
     return fn
+
+
+def main():
+    args = parse_args()
+    if args.server:
+        try:
+            sweep = getport(args.device)
+            httpserver = HTTPServer((args.host, args.port), serverfactory(sweep))
+            httpserver.serve_forever()
+        except KeyboardInterrupt:
+            httpserver.server_close()
+    else:
+        try:
+            cli(args)
+        except RuntimeError as e:
+            print(e, file=sys.stderr)
 
 
