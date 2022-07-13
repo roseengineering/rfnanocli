@@ -166,7 +166,7 @@ def serverfactory(sweep):
         def do_PUT(self):
             length = int(self.headers.get('Content-Length', 0))
             text = self.rfile.read(length).decode().strip()
-            if self.path == '/load':
+            if self.path == '/recall':
                 value = atoken(text)
                 if value is not None:
                     shutil.copyfile(value + '.npz', CALFILE) 
