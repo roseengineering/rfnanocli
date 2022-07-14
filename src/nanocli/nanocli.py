@@ -676,6 +676,10 @@ def main():
     if args.server:
         try:
             sweep = getport(args.device)
+        except RuntimeError as e:
+            print(str(e), file=sys.stderr)
+            return
+        try:
             httpserver = HTTPServer((args.host, args.port), serverfactory(sweep))
             httpserver.serve_forever()
         except KeyboardInterrupt:

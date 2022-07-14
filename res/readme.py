@@ -192,9 +192,9 @@ PUT /save
 PUT /recall
 ```
 
-The following REST commands will perform a sweep on a NanoVNA and will 
+The following REST commands will perform a sweep on a NanoVNA and then
 either save the results to the current calibration or return the results
-in the touchstone file format in the response body.
+in the response body using the touchstone file format.
 
 ```
 GET /
@@ -215,6 +215,7 @@ $ curl http://localhost:8080/open
 $ curl http://localhost:8080/short
 $ curl http://localhost:8080/load
 $ curl http://localhost:8080/thru
+$ curl http://localhost:8080/
 ```
 
 ## Python Interface
