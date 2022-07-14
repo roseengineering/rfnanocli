@@ -213,8 +213,8 @@ $ curl -d 7.06e6 http://localhost:8080/stop
 $ curl http://localhost:8080/init
 $ curl http://localhost:8080/open
 $ curl http://localhost:8080/short
-$ curl http://localhost:8080/thru
 $ curl http://localhost:8080/load
+$ curl http://localhost:8080/thru
 ```
 
 ## Python Interface
