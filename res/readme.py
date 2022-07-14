@@ -8,7 +8,7 @@ def spawn(command):
     return ''
 
 def run(command, language=""):
-    proc = subprocess.Popen('PYTHONPATH=src PATH=".:$PATH" ' + command, shell=True, stdout=subprocess.PIPE)
+    proc = subprocess.Popen('2>&1 PYTHONPATH=src PATH=".:$PATH" ' + command, shell=True, stdout=subprocess.PIPE)
     proc.wait()
     buf = proc.stdout.read().decode()
     return f"""
@@ -103,6 +103,10 @@ the top directory of the repo and running:
 $ pip install .
 ```
 
+Another option is to build an executable file of nanocli.
+To do this run:
+
+{run("sh build.sh")}
 
 ## Command Line Usage
 
@@ -209,7 +213,7 @@ $ curl -d 7.06e6 http://localhost:8080/stop
 $ curl http://localhost:8080/init
 $ curl http://localhost:8080/open
 $ curl http://localhost:8080/short
-$ curl http://localhost:8080/load
+$ curl http://localhost:8080/thru
 $ curl http://localhost:8080/load
 ```
 
