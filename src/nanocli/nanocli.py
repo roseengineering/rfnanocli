@@ -528,8 +528,8 @@ def cal_interpolate(cal, start, stop, points):
 
 
 def cal_init(start, stop, points, segment, samples, average, log, filename=CALFILE):
-    FSTART = 10e3
-    FSTOP = 10.01e6
+    FSTART = 100e3
+    FSTOP = 10.1e6
     POINTS = 101
     SAMPLES = 3
     start = start or FSTART
