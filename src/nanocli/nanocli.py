@@ -37,10 +37,10 @@ def parse_args():
     parser.add_argument('--host', default='0.0.0.0', help='REST server host name')
     parser.add_argument('--port', default=8080, type=int, help='REST server port number')
     # other flags
-    parser.add_argument('-d', '--device', help='device name')
-    parser.add_argument('-i', '--info',  action='store_true', help='show calibration info')
-    parser.add_argument('-l', '--list', action='store_true', help='list devices')
-    parser.add_argument('-1', '--one-port',  action='store_true', help='output in s1p format')
+    parser.add_argument('--device', help='tty device name of nanovna to use')
+    parser.add_argument('--info',  action='store_true', help='show calibration info')
+    parser.add_argument('--list', action='store_true', help='list available devices')
+    parser.add_argument('--gamma',  action='store_true', help='output only S11')
     args = parser.parse_args()
     return args
 
@@ -233,7 +233,7 @@ def serverfactory(sweep):
                 return self.text_response(buf)
             elif self.path == '/gamma':
                 buf = do_sweep(sweep=sweep, start=start, stop=stop, 
-                               points=points, samples=samples, one_port=True)
+                               points=points, samples=samples, gamma=True)
                 return self.text_response(buf)
             elif self.path == '/init':
                 cal_init(start=start, stop=stop, points=points, samples=samples, 
@@ -271,6 +271,15 @@ def serverfactory(sweep):
             else:
                 return self.text_response('Not Found', code=404)
             self.text_response('Bad Request', code=400)
+
+        def handle(self):
+            try:
+                BaseHTTPRequestHandler.handle(self)
+            except RuntimeError as e:
+                self.text_response(str(e), code=500)
+            except Exception as e:
+                self.text_response(str(e) if str(e) else 'Internal Server Error', code=500)
+                raise
 
     return Server
 
@@ -566,26 +575,26 @@ def measure(cal, sweep, samples):
     return freq, np.concatenate(data)
 
 
-def touchstone(freq, data, one_port):
+def touchstone(freq, data, gamma):
     line = []
     line.append('# MHz S MA R 50')
     for f, d in zip(freq, data):
         entry = ' {:14.5g} {:9.3f}'
         one = entry.format(abs(d[0]), np.angle(d[0], deg=True))
         two = entry.format(abs(d[1]), np.angle(d[1], deg=True))
-        if one_port:
+        if gamma:
             line.append('{:<10.6g}{}'.format(f/1e6, one))
         else:
             line.append('{:<10.6g}{}{}{}{}'.format(f/1e6, one, two, two, one))
     return '\n'.join(line)
 
 
-def do_sweep(sweep, start, stop, points, samples, one_port=False, filename=CALFILE):
+def do_sweep(sweep, start, stop, points, samples, gamma=False, filename=CALFILE):
     cal = cal_load(filename)
     cal_interpolate(cal=cal, start=start, stop=stop, points=points)
     freq, data = measure(cal=cal, sweep=sweep, samples=samples)
     data = cal_correct(cal=cal, data=data)
-    return touchstone(freq=freq, data=data, one_port=one_port)
+    return touchstone(freq=freq, data=data, gamma=gamma)
 
 
 def do_calibration(sweep, unit, samples, filename=CALFILE):
@@ -647,18 +656,18 @@ def cli(args):
     else:
         buf = do_sweep(sweep=sweep, start=args.start, stop=args.stop, 
                        points=args.points, samples=args.samples, 
-                       one_port=args.one_port, filename=args.filename)
+                       gamma=args.gamma, filename=args.filename)
         print(buf)
 
 
-def getvna(start=None, stop=None, points=None, device=None, one_port=False, filename=CALFILE):
+def getvna(start=None, stop=None, points=None, device=None, gamma=False, filename=CALFILE):
     cal = cal_load(filename)
     cal_interpolate(cal=cal, start=start, stop=stop, points=points)
     sweep = getport(device)
     def fn(samples=None):
         freq, data = measure(cal=cal, sweep=sweep, samples=samples)
         data = cal_correct(cal=cal, data=data)
-        return freq, data[:,0] if one_port else data
+        return freq, data[:,0] if gamma else data
     return fn
 
 
@@ -675,6 +684,6 @@ def main():
         try:
             cli(args)
         except RuntimeError as e:
-            print(e, file=sys.stderr)
+            print(str(e), file=sys.stderr)
 
 

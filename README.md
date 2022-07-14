@@ -29,11 +29,11 @@ After calibration, just issue the following on the command line.
 ```
 $ nanocli
 # MHz S MA R 50
-0.01              0.99999     0.000     0.00016946   -29.786     0.00016946   -29.786        0.99999     0.000
-2.5075            0.99968    -0.157     0.00090342    80.356     0.00090342    80.356        0.99968    -0.157
-5.005             0.99993    -0.348      0.0007697   -95.687      0.0007697   -95.687        0.99993    -0.348
-7.5025            0.99973    -0.560     0.00023922    89.016     0.00023922    89.016        0.99973    -0.560
-10                0.99932    -0.816     0.00031214    51.657     0.00031214    51.657        0.99932    -0.816
+0.01                    1    -0.000     0.00017319   -27.166     0.00017319   -27.166              1    -0.000
+2.5075            0.99975    -0.206     2.6361e-05   -24.238     2.6361e-05   -24.238        0.99975    -0.206
+5.005             0.99958    -0.405     3.8982e-05   -98.265     3.8982e-05   -98.265        0.99958    -0.405
+7.5025            0.99953    -0.589     2.9745e-05  -122.371     2.9745e-05  -122.371        0.99953    -0.589
+10                0.99974    -0.775     8.1551e-05   -84.721     8.1551e-05   -84.721        0.99974    -0.775
 ```
 
 
@@ -77,17 +77,24 @@ $ nanocli --load
 $ nanocli --thru
 ```
 
-Now run a sweep.  
+After calibration, any change in start, stop, and points will
+cause new calibration points to be interpolated from the current
+calibration for the sweep.  The number of points in a segment, 
+wheither the samples per point are averaged or not, or whether
+segments are log separated, these can only be changed by a new
+calibration.
+
+Now let's run a sweep.  
 
 
 ```
 $ nanocli --points 5
 # MHz S MA R 50
-0.01                    1     0.001     0.00018589   -32.255     0.00018589   -32.255              1     0.001
-2.5075             0.9999    -0.263     0.00022359  -155.273     0.00022359  -155.273         0.9999    -0.263
-5.005             0.99886    -0.319     0.00050646    66.798     0.00050646    66.798        0.99886    -0.319
-7.5025            0.99901    -0.565     3.6397e-05   -10.997     3.6397e-05   -10.997        0.99901    -0.565
-10                0.99964    -0.758     9.9414e-05  -153.155     9.9414e-05  -153.155        0.99964    -0.758
+0.01              0.99999    -0.003     0.00017371   -30.471     0.00017371   -30.471        0.99999    -0.003
+2.5075            0.99985    -0.226     1.9551e-05   173.086     1.9551e-05   173.086        0.99985    -0.226
+5.005             0.99965    -0.398     3.7662e-05   109.818     3.7662e-05   109.818        0.99965    -0.398
+7.5025            0.99959    -0.584     1.0113e-05  -151.873     1.0113e-05  -151.873        0.99959    -0.584
+10                0.99941    -0.774     2.3955e-05    60.205     2.3955e-05    60.205        0.99941    -0.774
 ```
 
 
@@ -95,13 +102,13 @@ Write a s1p file to stdout.
 
 
 ```
-$ nanocli -1 --points 5
+$ nanocli --gamma --points 5
 # MHz S MA R 50
-0.01              0.99998    -0.002
-2.5075            0.99923    -0.250
-5.005              1.0001    -0.411
-7.5025            0.99947    -0.547
-10                0.99966    -0.741
+0.01                    1     0.002
+2.5075            0.99979    -0.206
+5.005             0.99971    -0.396
+7.5025            0.99946    -0.582
+10                0.99966    -0.780
 ```
 
 
@@ -132,31 +139,30 @@ usage: nanocli [-h] [--filename FILENAME] [--start START] [--stop STOP]
                [--points POINTS] [--samples SAMPLES] [--init]
                [--segment SEGMENT] [--average] [--log] [--open] [--short]
                [--load] [--thru] [--server] [--host HOST] [--port PORT]
-               [-d DEVICE] [-i] [-l] [-1]
+               [--device DEVICE] [--info] [--list] [--gamma]
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --filename FILENAME   calibration file (default: cal.npz)
-  --start START         start frequency (Hz) (default: None)
-  --stop STOP           stop frequency (Hz) (default: None)
-  --points POINTS       frequency points in sweep (default: None)
-  --samples SAMPLES     samples per frequency (default: None)
-  --init                initialize calibration (default: False)
-  --segment SEGMENT     frequency points in each sweep segment (default: None)
-  --average             average samples rather than median (default: False)
-  --log                 use log frequency spacing (default: False)
-  --open                open calibration (default: False)
-  --short               short calibration (default: False)
-  --load                load calibration (default: False)
-  --thru                thru calibration (default: False)
-  --server              enter REST server mode (default: False)
-  --host HOST           REST server host name (default: 0.0.0.0)
-  --port PORT           REST server port number (default: 8080)
-  -d DEVICE, --device DEVICE
-                        device name (default: None)
-  -i, --info            show calibration info (default: False)
-  -l, --list            list devices (default: False)
-  -1, --one-port        output in s1p format (default: False)
+  -h, --help           show this help message and exit
+  --filename FILENAME  calibration file (default: cal.npz)
+  --start START        start frequency (Hz) (default: None)
+  --stop STOP          stop frequency (Hz) (default: None)
+  --points POINTS      frequency points in sweep (default: None)
+  --samples SAMPLES    samples per frequency (default: None)
+  --init               initialize calibration (default: False)
+  --segment SEGMENT    frequency points in each sweep segment (default: None)
+  --average            average samples rather than median (default: False)
+  --log                use log frequency spacing (default: False)
+  --open               open calibration (default: False)
+  --short              short calibration (default: False)
+  --load               load calibration (default: False)
+  --thru               thru calibration (default: False)
+  --server             enter REST server mode (default: False)
+  --host HOST          REST server host name (default: 0.0.0.0)
+  --port PORT          REST server port number (default: 8080)
+  --device DEVICE      tty device name of nanovna to use (default: None)
+  --info               show calibration info (default: False)
+  --list               list available devices (default: False)
+  --gamma              output only S11 (default: False)
 ```
 
 
@@ -204,6 +210,65 @@ for a s2p touchstone file.  If the --one option
 is passed on the command line the output will be
 formatted for a s1p touchstone file.
 
+## REST Server
+
+Passing the --server option starts the REST server for
+remote control of your NanoVNAs.
+
+The following REST commands display or update the current
+value of the corresponding command line setting.  For PUT
+(or POST), pass the value of the option to set in the body 
+of your request as a text string.  To reset all the options
+back to their defaults use the /reset REST command
+
+```
+GET or PUT /start
+GET or PUT /stop
+GET or PUT /points
+GET or PUT /samples
+GET or PUT /segment
+GET or PUT /average
+GET or PUT /log
+GET /reset
+```
+
+To create, get details about, load or save a calibration file use the 
+following REST commands.  To save the current calibration to a file or 
+to load (ie. recall) a file as the current calibration, 
+pass its name as a text string in the request body.
+
+```
+GET /init
+GET /info
+PUT /save
+PUT /recall
+```
+
+The following REST commands will perform a sweep on a NanoVNA and will 
+either save the results to the current calibration or return the results
+in the touchstone file format in the response body.
+
+```
+GET /
+GET /gamma
+GET /open
+GET /short
+GET /load
+GET /thru
+```
+
+For example to create a current calibration from 7.000Mhz to 7.060 MHz, use:
+
+```
+$ curl -d 7.00e6 http://localhost:8080/start
+$ curl -d 7.06e6 http://localhost:8080/stop
+$ curl http://localhost:8080/init
+$ curl http://localhost:8080/open
+$ curl http://localhost:8080/short
+$ curl http://localhost:8080/load
+$ curl http://localhost:8080/load
+```
+
 ## Python Interface
 
 Import this library using import nanocli.  The function
@@ -220,7 +285,7 @@ start, stop or points will force an interpolation of the calibration
 data.
 
 ```python
-fn = getvna(start=None, stop=None, points=None, device=None, filename='cal')
+fn = getvna(start=None, stop=None, points=None, device=None, gamma=False, filename='cal')
 freq, gamma = sweep(samples=3)
 ```
 
@@ -229,11 +294,11 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import getvna; f,d = getvna(points=5)(); print(d)'
-[[ 9.99969363e-01-3.41171399e-05j  2.04826705e-04-1.61565840e-05j]
- [ 9.99873877e-01-2.22244672e-03j -1.10466965e-04-1.25451013e-04j]
- [ 1.00001419e+00-5.81184775e-03j -3.05408612e-04+6.03068620e-05j]
- [ 1.00000989e+00-1.02572078e-02j  1.34262256e-04+1.35331415e-04j]
- [ 9.99870121e-01-1.33099873e-02j -2.13925727e-04+5.97222708e-04j]]
+[[ 1.00000858e+00-3.58801335e-05j  1.55680813e-04-7.71870837e-05j]
+ [ 9.99902070e-01-3.70452553e-03j  4.29339707e-07+3.66214663e-05j]
+ [ 9.99620318e-01-6.81046024e-03j -1.68951228e-05+2.39266083e-05j]
+ [ 9.99435008e-01-1.02279168e-02j  2.76658684e-05+1.07027590e-05j]
+ [ 9.99515235e-01-1.35815255e-02j  8.85594636e-06+9.93069261e-06j]]
 ```
 
 

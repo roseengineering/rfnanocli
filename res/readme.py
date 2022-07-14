@@ -73,13 +73,20 @@ $ nanocli --load
 $ nanocli --thru
 ```
 
-Now run a sweep.  
+After calibration, any change in start, stop, and points will
+cause new calibration points to be interpolated from the current
+calibration for the sweep.  The number of points in a segment, 
+wheither the samples per point are averaged or not, or whether
+segments are log separated, these can only be changed by a new
+calibration.
+
+Now let's run a sweep.  
 
 {run("nanocli --points 5")}
 
 Write a s1p file to stdout.
 
-{run("nanocli -1 --points 5")}
+{run("nanocli --gamma --points 5")}
 
 Passing the --points option above
 forces an interpolation of the calibration data
@@ -147,6 +154,65 @@ for a s2p touchstone file.  If the --one option
 is passed on the command line the output will be
 formatted for a s1p touchstone file.
 
+## REST Server
+
+Passing the --server option starts the REST server for
+remote control of your NanoVNAs.
+
+The following REST commands display or update the current
+value of the corresponding command line setting.  For PUT
+(or POST), pass the value of the option to set in the body 
+of your request as a text string.  To reset all the options
+back to their defaults use the /reset REST command
+
+```
+GET or PUT /start
+GET or PUT /stop
+GET or PUT /points
+GET or PUT /samples
+GET or PUT /segment
+GET or PUT /average
+GET or PUT /log
+GET /reset
+```
+
+To create, get details about, load or save a calibration file use the 
+following REST commands.  To save the current calibration to a file or 
+to load (ie. recall) a file as the current calibration, 
+pass its name as a text string in the request body.
+
+```
+GET /init
+GET /info
+PUT /save
+PUT /recall
+```
+
+The following REST commands will perform a sweep on a NanoVNA and will 
+either save the results to the current calibration or return the results
+in the touchstone file format in the response body.
+
+```
+GET /
+GET /gamma
+GET /open
+GET /short
+GET /load
+GET /thru
+```
+
+For example to create a current calibration from 7.000Mhz to 7.060 MHz, use:
+
+```
+$ curl -d 7.00e6 http://localhost:8080/start
+$ curl -d 7.06e6 http://localhost:8080/stop
+$ curl http://localhost:8080/init
+$ curl http://localhost:8080/open
+$ curl http://localhost:8080/short
+$ curl http://localhost:8080/load
+$ curl http://localhost:8080/load
+```
+
 ## Python Interface
 
 Import this library using import nanocli.  The function
@@ -163,7 +229,7 @@ start, stop or points will force an interpolation of the calibration
 data.
 
 ```python
-fn = getvna(start=None, stop=None, points=None, device=None, filename='cal')
+fn = getvna(start=None, stop=None, points=None, device=None, gamma=False, filename='cal')
 freq, gamma = sweep(samples=3)
 ```
 
