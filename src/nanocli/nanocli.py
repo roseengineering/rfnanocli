@@ -663,8 +663,8 @@ def cli(args):
 def getvna(start=None, stop=None, points=None, device=None, gamma=False, filename=CALFILE):
     cal = cal_load(filename)
     cal_interpolate(cal=cal, start=start, stop=stop, points=points)
-    sweep = getport(device)
     def fn(samples=None):
+        sweep = getport(device)
         freq, data = measure(cal=cal, sweep=sweep, samples=samples)
         data = cal_correct(cal=cal, data=data)
         return freq, data[:,0] if gamma else data
