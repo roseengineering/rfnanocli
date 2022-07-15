@@ -22,17 +22,14 @@ def parse_args():
     parser.add_argument('--stop', type=float, help='stop frequency (Hz)')
     parser.add_argument('--points', type=int, help='frequency points in sweep')
     parser.add_argument('--samples', type=int, help='samples per frequency')
-    # calibration
+    parser.add_argument('--average', action='store_true', help='average samples')
+    # SOLT calibration
     parser.add_argument('--init', action='store_true', help='initialize calibration')
-    parser.add_argument('--segment', type=int, help='frequency points in each sweep segment')
-    parser.add_argument('--average', action='store_true', help='average samples rather than median')
-    parser.add_argument('--log', action='store_true', help='use log frequency spacing')
-    # SOLT
     parser.add_argument('--open', action='store_true', help='open calibration')
     parser.add_argument('--short', action='store_true', help='short calibration')
     parser.add_argument('--load', action='store_true', help='load calibration')
     parser.add_argument('--thru', action='store_true', help='thru calibration')
-    # rest server
+    # REST server
     parser.add_argument('--server', action='store_true', help='enter REST server mode')
     parser.add_argument('--host', default='0.0.0.0', help='REST server host name')
     parser.add_argument('--port', default=8080, type=int, help='REST server port number')
@@ -128,8 +125,6 @@ def abool(text):
         return False
 
 def tobool(val):
-    if val is None:
-        return 'null'
     return 'true' if val else 'false'
 
 def tostr(val):
@@ -196,20 +191,10 @@ def serverfactory(sweep):
                 if value is not None:
                     kw['samples'] = value
                     return self.text_response()
-            elif self.path == '/segment':
-                value = aint(text)
-                if value is not None:
-                    kw['segment'] = value
-                    return self.text_response()
             elif self.path == '/average':
                 value = abool(text)
                 if value is not None:
-                    kw['segment'] = value
-                    return self.text_response()
-            elif self.path == '/log':
-                value = abool(text)
-                if value is not None:
-                    kw['log'] = value
+                    kw['average'] = value
                     return self.text_response()
             else:
                 return self.text_response('Not Found', code=404)
@@ -221,35 +206,35 @@ def serverfactory(sweep):
             stop = kw.get('stop')
             points = kw.get('points')
             samples = kw.get('samples')
-            segment = kw.get('segment')
             average = kw.get('average')
-            log = kw.get('log')
             if self.path == '/info':
-                buf = do_info()
+                buf = do_info(filename=CALFILE)
                 return self.text_response(buf)
             elif self.path == '/':
                 buf = do_sweep(sweep=sweep, start=start, stop=stop, 
-                               points=points, samples=samples)
+                               points=points, samples=samples, average=average, 
+                               filename=CALFILE)
                 return self.text_response(buf)
             elif self.path == '/gamma':
                 buf = do_sweep(sweep=sweep, start=start, stop=stop, 
-                               points=points, samples=samples, gamma=True)
+                               points=points, samples=samples, average=average, 
+                               gamma=True, filename=CALFILE)
                 return self.text_response(buf)
             elif self.path == '/init':
-                cal_init(start=start, stop=stop, points=points, samples=samples, 
-                         segment=segment, average=average, log=log)
+                cal_init(start=start, stop=stop, points=points, samples=samples,
+                         filename=CALFILE)
                 return self.text_response()
             elif self.path == '/open':
-                do_calibration(sweep=sweep, unit='open', samples=samples)
+                do_calibration(sweep=sweep, unit='open', average=average, filename=CALFILE)
                 return self.text_response()
             elif self.path == '/short':
-                do_calibration(sweep=sweep, unit='short', samples=samples)
+                do_calibration(sweep=sweep, unit='short', average=average, filename=CALFILE)
                 return self.text_response()
             elif self.path == '/load':
-                do_calibration(sweep=sweep, unit='load', samples=samples)
+                do_calibration(sweep=sweep, unit='load', average=average, filename=CALFILE)
                 return self.text_response()
             elif self.path == '/thru':
-                do_calibration(sweep=sweep, unit='thru', samples=samples)
+                do_calibration(sweep=sweep, unit='thru', average=average, filename=CALFILE)
                 return self.text_response()
             elif self.path == '/reset':
                 kw = {}
@@ -262,12 +247,8 @@ def serverfactory(sweep):
                 return self.text_response(tostr(points))
             elif self.path == '/samples':
                 return self.text_response(tostr(samples))
-            elif self.path == '/segment':
-                return self.text_response(tostr(segment))
             elif self.path == '/average':
                 return self.text_response(tobool(average))
-            elif self.path == '/log':
-                return self.text_response(tobool(log))
             else:
                 return self.text_response('Not Found', code=404)
             self.text_response('Bad Request', code=400)
@@ -333,7 +314,7 @@ def nanovna(dev):
         return d[:,1::2] + 1j * d[:,2::2]
 
     def sweep(start, stop, points, samples):
-        start, stop, points = int(start), int(stop), int(points)
+        start, stop, points = round(start), round(stop), round(points)
         # points should also be <= 101, but dislord extended it to 301
         assert(points > 0)
         assert(stop >= start)
@@ -405,7 +386,7 @@ def saa2(dev):
         send(ser, cmd)
 
     def sweep(start, stop, points, samples):
-        start, stop, points = int(start), int(stop), int(points)
+        start, stop, points = round(start), round(stop), round(points)
         assert(points > 0 and points <= POINTS)
         assert(stop >= start)
         assert(start >= FSTART and stop <= FSTOP)
@@ -499,16 +480,7 @@ def cal_frequencies(cal):
     start = cal['start']
     stop = cal['stop']
     points = cal['points']
-    segment = cal['segment']
     freq = np.linspace(start, stop, points)
-    if cal['log'] and points > segment:
-        n = int(np.ceil(points / segment))
-        seg = np.logspace(np.log10(start), np.log10(stop), n+1)
-        freq = []
-        for i in range(len(seg)-1):
-            df = (seg[i+1] - seg[i]) / segment
-            d = np.arange(seg[i], seg[i+1], df)
-            freq = np.concatenate((freq, d))
     return freq
 
 
@@ -527,7 +499,7 @@ def cal_interpolate(cal, start, stop, points):
                 cal[name] = np.interp(freq_new, freq, data)
 
 
-def cal_init(start, stop, points, segment, samples, average, log, filename=CALFILE):
+def cal_init(start, stop, points, samples, filename):
     FSTART = 100e3
     FSTOP = 10.1e6
     POINTS = 101
@@ -535,16 +507,11 @@ def cal_init(start, stop, points, segment, samples, average, log, filename=CALFI
     start = start or FSTART
     stop = stop or FSTOP
     points = points or POINTS
-    segment = segment or POINTS
     samples = samples or SAMPLES
-    average = bool(average)
-    log = bool(log)
     assert(stop >= start)
-    assert(segment > 0)
     assert(points > 0)
     assert(samples > 0)
-    np.savez(filename, start=start, stop=stop, points=points, 
-             segment=segment, samples=samples, average=average, log=log)
+    np.savez(filename, start=start, stop=stop, points=points, samples=samples)
 
 
 def cal_load(filename):
@@ -558,21 +525,12 @@ def cal_load(filename):
     return dict(npzfile)
 
 
-def measure(cal, sweep, samples):
-    points = cal['points']
-    segment = cal['segment']
-    average = cal['average']
+def measure(cal, sweep, samples, average):
     samples = samples or cal['samples']
     freq = cal_frequencies(cal=cal)
-    ix = np.arange(segment, points, segment)
-    data = []
-    for d in np.split(freq, ix):
-        err = np.linalg.norm(d - np.linspace(d[0], d[-1], len(d)))
-        assert(err < 1)
-        s = sweep(np.round(d[0]), np.round(d[-1]), len(d), samples)
-        s = np.average(s, axis=0) if average else np.median(s, axis=0)
-        data.append(s)
-    return freq, np.concatenate(data)
+    s = sweep(start=freq[0], stop=freq[-1], points=len(freq), samples=samples)
+    s = np.average(s, axis=0) if average else np.median(s, axis=0)
+    return freq, s
 
 
 def touchstone(freq, data, gamma):
@@ -589,33 +547,30 @@ def touchstone(freq, data, gamma):
     return '\n'.join(line)
 
 
-def do_sweep(sweep, start, stop, points, samples, gamma=False, filename=CALFILE):
+def do_sweep(sweep, start, stop, points, samples, average, filename, gamma=None):
     cal = cal_load(filename)
     cal_interpolate(cal=cal, start=start, stop=stop, points=points)
-    freq, data = measure(cal=cal, sweep=sweep, samples=samples)
+    freq, data = measure(cal=cal, sweep=sweep, samples=samples, average=average)
     data = cal_correct(cal=cal, data=data)
     return touchstone(freq=freq, data=data, gamma=gamma)
 
 
-def do_calibration(sweep, unit, samples, filename=CALFILE):
+def do_calibration(sweep, unit, filename, average):
     cal = cal_load(filename)
-    freq, data = measure(cal=cal, sweep=sweep, samples=samples)
+    freq, data = measure(cal=cal, sweep=sweep, average=average, samples=None)
     cal[unit] = data[:,0]
     if unit == 'thru':
         cal['thru21'] = data[:,1]
     np.savez(filename, **cal)
 
 
-def do_info(filename=CALFILE):
+def do_info(filename):
     cal = cal_load(filename)
     line = []
     line.append('start:   {:.6g} MHz'.format(cal['start'] / 1e6))
     line.append('stop:    {:.6g} MHz'.format(cal['stop'] / 1e6))
     line.append('points:  {:d}'.format(cal['points']))
-    line.append('segment: {:d}'.format(cal['segment']))
     line.append('samples: {:d}'.format(cal['samples']))
-    line.append('average: {}'.format(tobool(cal['average'])))
-    line.append('log:     {}'.format(tobool(cal['log'])))
     units = [ d for d in CALIBRATIONS if d in cal ]
     line.append('cals:    {}'.format(', '.join(units) if units else '<none>'))
     return '\n'.join(line)
@@ -638,8 +593,7 @@ def cli(args):
     # initialize calibration
     if args.init:
         cal_init(start=args.start, stop=args.stop, points=args.points,
-                 samples=args.samples, segment=args.segment, 
-                 average=args.average, log=args.log, filename=args.filename)
+                 samples=args.samples, filename=args.filename)
         return
 
     # show details
@@ -651,22 +605,21 @@ def cli(args):
     # open device
     sweep = getport(device=args.device)
     if unit:
-        do_calibration(sweep=sweep, unit=unit[0], samples=args.samples,
-                       filename=args.filename)
+        do_calibration(sweep=sweep, unit=unit[0], average=args.average, filename=args.filename)
     else:
         buf = do_sweep(sweep=sweep, start=args.start, stop=args.stop, 
-                       points=args.points, samples=args.samples, 
+                       points=args.points, samples=args.samples, average=args.average, 
                        gamma=args.gamma, filename=args.filename)
         print(buf)
 
 
 def getvna(device=None, filename=CALFILE):
     cal_orig = cal_load(filename)
-    def fn(start=None, stop=None, points=None, gamma=False, samples=None):
+    def fn(start=None, stop=None, points=None, samples=None, average=None, gamma=None):
         cal = cal_orig.copy()
         cal_interpolate(cal=cal, start=start, stop=stop, points=points)
         sweep = getport(device)
-        freq, data = measure(cal=cal, sweep=sweep, samples=samples)
+        freq, data = measure(cal=cal, sweep=sweep, samples=samples, average=average)
         data = cal_correct(cal=cal, data=data)
         return freq, data[:,0] if gamma else data
     return fn

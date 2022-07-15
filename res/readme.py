@@ -75,10 +75,7 @@ $ nanocli --thru
 
 After calibration, any change in start, stop, and points will
 cause new calibration points to be interpolated from the current
-calibration for the sweep.  The number of points in a segment, 
-wheither the samples per point are averaged or not, or whether
-segments are log separated, these can only be changed by a new
-calibration.
+calibration for the sweep.  
 
 Now let's run a sweep.  
 
@@ -174,9 +171,7 @@ GET or PUT /start
 GET or PUT /stop
 GET or PUT /points
 GET or PUT /samples
-GET or PUT /segment
 GET or PUT /average
-GET or PUT /log
 GET /reset
 ```
 
@@ -210,6 +205,7 @@ For example to create a current calibration from 7.000Mhz to 7.060 MHz, use:
 ```
 $ curl -d 7.00e6 http://localhost:8080/start
 $ curl -d 7.06e6 http://localhost:8080/stop
+$ curl -d 5 http://localhost:8080/samples
 $ curl http://localhost:8080/init
 $ curl http://localhost:8080/open
 $ curl http://localhost:8080/short

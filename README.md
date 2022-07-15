@@ -29,11 +29,11 @@ After calibration, just issue the following on the command line.
 ```
 $ nanocli
 # MHz S MA R 50
-0.01                 0.42   -61.074     4.1656e-05   -34.982     4.1656e-05   -34.982           0.42   -61.074
-2.5075             1.0871   128.807     0.00014668    75.448     0.00014668    75.448         1.0871   128.807
-5.005              1.0343    90.676     0.00010333    85.666     0.00010333    85.666         1.0343    90.676
-7.5025              1.014    64.546     9.5356e-05  -157.521     9.5356e-05  -157.521          1.014    64.546
-10                 1.0047    46.043     7.9486e-06    10.382     7.9486e-06    10.382         1.0047    46.043
+0.01               0.0892     0.471     2.2561e-05    90.213     2.2561e-05    90.213         0.0892     0.471
+2.5075           0.088949    -3.376     7.7961e-06    83.837     7.7961e-06    83.837       0.088949    -3.376
+5.005            0.088878    -6.562     1.8099e-05    80.177     1.8099e-05    80.177       0.088878    -6.562
+7.5025           0.088862    -9.750      1.167e-05   106.867      1.167e-05   106.867       0.088862    -9.750
+10               0.089019   -13.106     7.6575e-06   -98.161     7.6575e-06   -98.161       0.089019   -13.106
 ```
 
 
@@ -59,10 +59,7 @@ $ nanocli --info
 start:   0.01 MHz
 stop:    10 MHz
 points:  101
-segment: 101
 samples: 3
-average: false
-log:     false
 cals:    <none>
 ```
 
@@ -79,10 +76,7 @@ $ nanocli --thru
 
 After calibration, any change in start, stop, and points will
 cause new calibration points to be interpolated from the current
-calibration for the sweep.  The number of points in a segment, 
-wheither the samples per point are averaged or not, or whether
-segments are log separated, these can only be changed by a new
-calibration.
+calibration for the sweep.  
 
 Now let's run a sweep.  
 
@@ -90,11 +84,11 @@ Now let's run a sweep.
 ```
 $ nanocli --points 5
 # MHz S MA R 50
-0.01              0.42001   -61.082     4.4433e-05   -29.015     4.4433e-05   -29.015        0.42001   -61.082
-2.5075             1.0869   128.831     4.6867e-05  -174.881     4.6867e-05  -174.881         1.0869   128.831
-5.005              1.0346    90.671     6.2694e-05   -98.653     6.2694e-05   -98.653         1.0346    90.671
-7.5025             1.0135    64.527      1.005e-05    75.428      1.005e-05    75.428         1.0135    64.527
-10                 1.0051    46.046     3.2977e-05   150.464     3.2977e-05   150.464         1.0051    46.046
+0.01             0.089177     0.458     1.5898e-05    75.621     1.5898e-05    75.621       0.089177     0.458
+2.5075           0.088973    -3.372     1.0276e-05   131.935     1.0276e-05   131.935       0.088973    -3.372
+5.005              0.0889    -6.575     5.2271e-06    -8.404     5.2271e-06    -8.404         0.0889    -6.575
+7.5025           0.088878    -9.756      6.526e-06   164.609      6.526e-06   164.609       0.088878    -9.756
+10               0.089027   -13.119     6.0622e-06   -28.472     6.0622e-06   -28.472       0.089027   -13.119
 ```
 
 
@@ -104,11 +98,11 @@ Write a s1p file to stdout.
 ```
 $ nanocli --gamma --points 5
 # MHz S MA R 50
-0.01              0.41996   -61.082
-2.5075             1.0866   128.814
-5.005               1.034    90.655
-7.5025              1.014    64.540
-10                 1.0045    46.037
+0.01             0.089187     0.481
+2.5075           0.088956    -3.373
+5.005              0.0889    -6.557
+7.5025           0.088857    -9.754
+10               0.089003   -13.106
 ```
 
 
@@ -148,10 +142,9 @@ The utility's command line usage is as follows:
 ```
 $ nanocli --help
 usage: nanocli [-h] [--filename FILENAME] [--start START] [--stop STOP]
-               [--points POINTS] [--samples SAMPLES] [--init]
-               [--segment SEGMENT] [--average] [--log] [--open] [--short]
-               [--load] [--thru] [--server] [--host HOST] [--port PORT]
-               [--device DEVICE] [--info] [--list] [--gamma]
+               [--points POINTS] [--samples SAMPLES] [--average] [--init]
+               [--open] [--short] [--load] [--thru] [--server] [--host HOST]
+               [--port PORT] [--device DEVICE] [--info] [--list] [--gamma]
 
 optional arguments:
   -h, --help           show this help message and exit
@@ -160,10 +153,8 @@ optional arguments:
   --stop STOP          stop frequency (Hz) (default: None)
   --points POINTS      frequency points in sweep (default: None)
   --samples SAMPLES    samples per frequency (default: None)
+  --average            average samples (default: False)
   --init               initialize calibration (default: False)
-  --segment SEGMENT    frequency points in each sweep segment (default: None)
-  --average            average samples rather than median (default: False)
-  --log                use log frequency spacing (default: False)
   --open               open calibration (default: False)
   --short              short calibration (default: False)
   --load               load calibration (default: False)
@@ -238,9 +229,7 @@ GET or PUT /start
 GET or PUT /stop
 GET or PUT /points
 GET or PUT /samples
-GET or PUT /segment
 GET or PUT /average
-GET or PUT /log
 GET /reset
 ```
 
@@ -274,6 +263,7 @@ For example to create a current calibration from 7.000Mhz to 7.060 MHz, use:
 ```
 $ curl -d 7.00e6 http://localhost:8080/start
 $ curl -d 7.06e6 http://localhost:8080/stop
+$ curl -d 5 http://localhost:8080/samples
 $ curl http://localhost:8080/init
 $ curl http://localhost:8080/open
 $ curl http://localhost:8080/short
@@ -307,11 +297,11 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import getvna; f,d = getvna()(points=5); print(d)'
-[[ 2.03042954e-01-3.67485762e-01j  5.43650240e-05-2.19736248e-05j]
- [-6.81666553e-01+8.46888661e-01j  6.25234097e-05-1.32536516e-05j]
- [-1.18589792e-02+1.03457141e+00j  8.47987831e-05-3.41041014e-05j]
- [ 4.36013192e-01+9.15991008e-01j -3.85111198e-05-1.07772648e-05j]
- [ 6.97618604e-01+7.23126352e-01j -4.29712236e-06+1.36796385e-04j]]
+[[ 8.9177208e-02+7.1646700e-04j -6.4000000e-08+1.6140000e-05j]
+ [ 8.8788664e-02-5.2337000e-03j -4.0400000e-07+3.1960000e-06j]
+ [ 8.8302160e-02-1.0172559e-02j -1.0910000e-05+2.6207000e-05j]
+ [ 8.7589904e-02-1.5075929e-02j  5.5150000e-06+2.3049000e-05j]
+ [ 8.6698872e-02-2.0184022e-02j  3.8930000e-06-1.6855000e-05j]]
 ```
 
 
