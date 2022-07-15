@@ -234,13 +234,13 @@ start, stop or points will force an interpolation of the calibration
 data.
 
 ```python
-fn = getvna(start=None, stop=None, points=None, device=None, gamma=False, filename='cal')
-freq, gamma = sweep(samples=3)
+sweep = getvna(device=None, filename='cal')
+sweep(start=None, stop=None, points=None, gamma=False, samples=None)
 ```
 
 For example:
 
-{run("python3 -c 'from nanocli import getvna; f,d = getvna(points=5)(); print(d)'")}
+{run("python3 -c 'from nanocli import getvna; f,d = getvna()(points=5); print(d)'")}
 
 
 ## Reason for This Utility
