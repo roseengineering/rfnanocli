@@ -660,10 +660,11 @@ def cli(args):
         print(buf)
 
 
-def getvna(start=None, stop=None, points=None, device=None, gamma=False, filename=CALFILE):
-    cal = cal_load(filename)
-    cal_interpolate(cal=cal, start=start, stop=stop, points=points)
-    def fn(samples=None):
+def getvna(device=None, filename=CALFILE):
+    cal_orig = cal_load(filename)
+    def fn(start=None, stop=None, points=None, gamma=False, samples=None):
+        cal = cal_orig.copy()
+        cal_interpolate(cal=cal, start=start, stop=stop, points=points)
         sweep = getport(device)
         freq, data = measure(cal=cal, sweep=sweep, samples=samples)
         data = cal_correct(cal=cal, data=data)
