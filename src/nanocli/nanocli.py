@@ -300,7 +300,7 @@ def nanovna(dev):
         return text
 
     def clear_state(ser):
-        for i in range(3): 
+        for i in range(2): 
             text = command(ser, "help")
             if text[:9] == 'Commands:': break
             text = read(ser)
@@ -536,7 +536,7 @@ def measure(cal, sweep, samples, average):
     return freq, s
 
 
-def touchstone(freq, data, gamma):
+def write_touchstone(freq, data, gamma):
     line = []
     line.append('# MHz S MA R 50')
     for f, d in zip(freq, data):
@@ -555,7 +555,8 @@ def do_sweep(sweep, start, stop, points, samples, average, filename, gamma=None)
     cal_interpolate(cal=cal, start=start, stop=stop, points=points)
     freq, data = measure(cal=cal, sweep=sweep, samples=samples, average=average)
     data = cal_correct(cal=cal, data=data)
-    return touchstone(freq=freq, data=data, gamma=gamma)
+    text = write_touchstone(freq=freq, data=data, gamma=gamma)
+    return text
 
 
 def do_calibration(sweep, unit, filename, average):

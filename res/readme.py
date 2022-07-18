@@ -151,7 +151,7 @@ sweep it can.
 All measurement output from the utility is
 written to the terminal (using stdout).
 By default the output will be formatted
-for a s2p touchstone file.  If the --one option
+for a s2p touchstone file.  If the --gamma option
 is passed on the command line the output will be
 formatted for a s1p touchstone file.
 
