@@ -211,6 +211,8 @@ $ curl http://localhost:8080/open
 $ curl http://localhost:8080/short
 $ curl http://localhost:8080/load
 $ curl http://localhost:8080/thru
+$ curl -d crystal http://localhost:8080/save
+$ curl -d crystal http://localhost:8080/recall
 $ curl http://localhost:8080/
 ```
 
