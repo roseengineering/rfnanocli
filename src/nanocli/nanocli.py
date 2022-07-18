@@ -296,12 +296,15 @@ def nanovna(dev):
 
     def command(ser, buf):
         send(ser, buf)
-        return read(ser)
+        text = read(ser)
+        return text
 
     def clear_state(ser):
-        text = command(ser, "help")
-        if text[:9] != 'Commands:': 
+        for i in range(3): 
+            text = command(ser, "help")
+            if text[:9] == 'Commands:': break
             text = read(ser)
+            if text[:9] == 'Commands:': break
 
     def scan(ser, start, stop, points):
         cmd = "scan {:d} {:d} {:d} 111".format(start, stop, points)
@@ -323,8 +326,8 @@ def nanovna(dev):
         # 26000000 {xtal} * 32 {pll_n} / (6348 {freq} << 6 {rdiv}) = 2047.9
         freq = np.linspace(start, stop, points)
         clear_state(ser)
-        data = []
         command(ser, "cal off")
+        data = []
         for i in range(samples):
             d = scan(ser, start=start, stop=stop, points=points)
             data.append(d)

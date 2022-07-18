@@ -25,7 +25,7 @@ print(f"""\
 ## Introduction
 
 Nanocli is a utility for running measurement
-sweeps off the original NanoVNA or the new SAA2 (NanoVNAv2)
+sweeps off the original NanoVNA, NanoVNA-Hx (DiSload firmware), or the new SAA2 (NanoVNAv2)
 from the command line.
 The sweep results are printed to the terminal
 in touchstone format.
