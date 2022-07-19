@@ -28,12 +28,20 @@ After calibration, just issue the following on the command line.
 
 ```
 $ nanocli
-# MHz S MA R 50
-0.01              0.10654     5.824       6.65e-06    79.516       6.65e-06    79.516        0.10654     5.824
-2.5075           0.097059    -3.249     1.8569e-05   178.642     1.8569e-05   178.642       0.097059    -3.249
-5.005            0.096943    -6.458     1.6171e-05   164.300     1.6171e-05   164.300       0.096943    -6.458
-7.5025           0.097051    -9.616     8.3377e-06  -179.237     8.3377e-06  -179.237       0.097051    -9.616
-10               0.097048   -12.808     1.5307e-05   169.578     1.5307e-05   169.578       0.097048   -12.808
+Traceback (most recent call last):
+  File "/usr/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/vol/sda1/share/rfnanocli/./nanocli/__main__.py", line 8, in <module>
+    sys.exit(main())
+  File "/vol/sda1/share/rfnanocli/./nanocli/nanocli/nanocli.py", line 699, in main
+  File "/vol/sda1/share/rfnanocli/./nanocli/nanocli/nanocli.py", line 648, in cli
+  File "/vol/sda1/share/rfnanocli/./nanocli/nanocli/nanocli.py", line 611, in do_sweep
+  File "/vol/sda1/share/rfnanocli/./nanocli/nanocli/nanocli.py", line 594, in measure
+  File "/vol/sda1/share/rfnanocli/./nanocli/nanocli/nanocli.py", line 374, in sweep
+  File "/vol/sda1/share/rfnanocli/./nanocli/nanocli/nanocli.py", line 356, in scan
+AssertionError
 ```
 
 
@@ -83,12 +91,12 @@ Now let's run a sweep.
 
 ```
 $ nanocli --points 5
-# MHz S MA R 50
-0.01              0.10663     6.051     7.1352e-06    74.006     7.1352e-06    74.006        0.10663     6.051
-2.5075           0.097231    -3.260     1.4142e-05   173.822     1.4142e-05   173.822       0.097231    -3.260
-5.005            0.097072    -6.460     1.8714e-05   164.542     1.8714e-05   164.542       0.097072    -6.460
-7.5025           0.097046    -9.625     1.5069e-05   152.187     1.5069e-05   152.187       0.097046    -9.625
-10               0.097086   -12.798     1.5937e-05   157.335     1.5937e-05   157.335       0.097086   -12.798
+# MHz S DB R 50
+0.01           -19.467     5.997     -95.199    40.852     -95.199    40.852     -19.467     5.997
+2.5075         -20.257    -3.459     -98.947   163.925     -98.947   163.925     -20.257    -3.459
+5.005          -20.251    -6.869     -95.863   171.899     -95.863   171.899     -20.251    -6.869
+7.5025         -20.257   -10.194     -98.640   148.864     -98.640   148.864     -20.257   -10.194
+10             -20.251   -13.580     -96.621  -165.586     -96.621  -165.586     -20.251   -13.580
 ```
 
 
@@ -97,12 +105,12 @@ Write a s1p file to stdout.
 
 ```
 $ nanocli --gamma --points 5
-# MHz S MA R 50
-0.01              0.10638     6.087
-2.5075           0.097191    -3.278
-5.005            0.096957    -6.450
-7.5025           0.097225    -9.627
-10               0.097056   -12.819
+# MHz S DB R 50
+0.01           -19.419     6.286
+2.5075         -20.259    -3.460
+5.005          -20.256    -6.861
+7.5025         -20.245   -10.200
+10             -20.264   -13.568
 ```
 
 
@@ -143,8 +151,9 @@ The utility's command line usage is as follows:
 $ nanocli --help
 usage: nanocli [-h] [--filename FILENAME] [--start START] [--stop STOP]
                [--points POINTS] [--samples SAMPLES] [--average] [--init]
-               [--open] [--short] [--load] [--thru] [--server] [--host HOST]
-               [--port PORT] [--device DEVICE] [--info] [--list] [--gamma]
+               [--open] [--short] [--load] [--thru] [--server]
+               [--hostname HOSTNAME] [--port PORT] [--device DEVICE] [--info]
+               [--list] [--gamma]
 
 optional arguments:
   -h, --help           show this help message and exit
@@ -160,7 +169,7 @@ optional arguments:
   --load               load calibration (default: False)
   --thru               thru calibration (default: False)
   --server             enter REST server mode (default: False)
-  --host HOST          REST server host name (default: 0.0.0.0)
+  --hostname HOSTNAME  REST server host name (default: 0.0.0.0)
   --port PORT          REST server port number (default: 8080)
   --device DEVICE      tty device name of nanovna to use (default: None)
   --info               show calibration info (default: False)
@@ -299,11 +308,11 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import getvna; f,d = getvna()(points=5); print(d)'
-[[ 1.0579924e-01+1.2161836e-02j  3.3810000e-06+1.2025000e-05j]
- [ 9.7148608e-02-5.5446630e-03j -1.7184000e-05+7.8460000e-06j]
- [ 9.6473040e-02-1.0923772e-02j -1.4697000e-05+9.6860000e-06j]
- [ 9.5692816e-02-1.6220190e-02j -1.5970000e-05-7.8100000e-07j]
- [ 9.4750960e-02-2.1540150e-02j -1.3090000e-05-2.8000000e-06j]]
+[[ 1.0637792e-01+1.0777095e-02j  5.6520000e-06+2.6995000e-05j]
+ [ 9.7122704e-02-5.8678790e-03j -1.6416000e-05+4.4730000e-06j]
+ [ 9.6387744e-02-1.1591153e-02j -9.0520000e-06+3.0070000e-06j]
+ [ 9.5558512e-02-1.7182746e-02j -8.8140000e-06+1.3646000e-05j]
+ [ 9.4301288e-02-2.2756184e-02j -1.0610000e-05+3.4830000e-06j]]
 ```
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
-import os, sys, re, shutil
-import serial
+import os, sys, re, shutil, serial
+import urllib.request
 import numpy as np
 from serial.tools import list_ports
 from struct import pack, unpack_from
@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument('--thru', action='store_true', help='thru calibration')
     # REST server
     parser.add_argument('--server', action='store_true', help='enter REST server mode')
-    parser.add_argument('--host', default='0.0.0.0', help='REST server host name')
+    parser.add_argument('--hostname', default='0.0.0.0', help='REST server host name')
     parser.add_argument('--port', default=8080, type=int, help='REST server port number')
     # other flags
     parser.add_argument('--device', help='tty device name of nanovna to use')
@@ -40,6 +40,24 @@ def parse_args():
     parser.add_argument('--gamma',  action='store_true', help='output only S11')
     args = parser.parse_args()
     return args
+
+
+def request(path, data=None, hostname='127.0.0.1', port=8080):
+    url = f'http://{hostname}:{port}/{path}' 
+    method = 'GET' if data is None else 'PUT'
+    req = urllib.request.Request(url, method=method)
+    if data is not None:
+        data = str(data).encode('latin1')
+    with urllib.request.urlopen(req, data=data) as f:
+        return f.read().decode('latin1')
+
+
+###############################
+# touchstone routines
+###############################
+
+def db(x):
+    return 20 * np.log10(abs(x))
 
 
 def rect(x, y, dtype):
@@ -105,17 +123,37 @@ def read_touchstone(text):
     return freq, data
 
 
+def write_touchstone(freq, data, gamma):
+    line = []
+    line.append('# MHz S DB R 50')
+    entry = ' {:11.3f} {:9.3f}'
+    for f, d in zip(freq, data):
+        one = entry.format(db(d[0]), np.angle(d[0], deg=True))
+        two = entry.format(db(d[1]), np.angle(d[1], deg=True))
+        if gamma:
+            line.append('{:<10.6g}{}'.format(f/1e6, one))
+        else:
+            line.append('{:<10.6g}{}{}{}{}'.format(f/1e6, one, two, two, one))
+    return '\n'.join(line)
+
+
+###############################
+# REST server
+###############################
+
 def afloat(text):
     try:
         return float(text) 
     except ValueError:
         pass
 
+
 def aint(text):
     try:
         return int(text) 
     except ValueError:
         pass
+
 
 def abool(text):
     text = text.strip().lower()
@@ -124,19 +162,21 @@ def abool(text):
     if text == 'n' or text == 'no' or text == 'false':
         return False
 
+
 def tobool(val):
     return 'true' if val else 'false'
+
 
 def tostr(val):
     if val is None:
         return 'null'
     return str(val)
 
+
 def atoken(text):
     text = text.strip()
     if re.fullmatch(r'[\w_]+', text):
         return text
-
 
 def serverfactory(sweep):
     kw = {}
@@ -208,7 +248,7 @@ def serverfactory(sweep):
             samples = kw.get('samples')
             average = kw.get('average')
             if self.path == '/info':
-                buf = do_info(filename=CALFILE)
+                buf = cal_info(filename=CALFILE)
                 return self.text_response(buf)
             elif self.path == '/':
                 buf = do_sweep(sweep=sweep, start=start, stop=stop, 
@@ -265,6 +305,8 @@ def serverfactory(sweep):
     return Server
 
 
+###############################
+# drivers
 ###############################
 
 def nanovna(dev):
@@ -417,10 +459,8 @@ def saa2(dev):
         ser = serial.Serial(dev.device)
         return sweep
 
-
-###############################
-
 DEVICES = [ nanovna, saa2 ]
+
 
 def probe_devices():
     data = []
@@ -451,6 +491,10 @@ def getport(device):
     list_devices(data)
     raise RuntimeError("No NanoVNA device found")
 
+
+###############################
+# calibration
+###############################
 
 def calibrate(cal):
     # see Rytting, "Network analyzer error models and calibration methods"
@@ -528,35 +572,28 @@ def cal_load(filename):
     return dict(npzfile)
 
 
+def cal_info(filename):
+    cal = cal_load(filename)
+    line = []
+    line.append('start:   {:.6g} MHz'.format(cal['start'] / 1e6))
+    line.append('stop:    {:.6g} MHz'.format(cal['stop'] / 1e6))
+    line.append('points:  {:d}'.format(cal['points']))
+    line.append('samples: {:d}'.format(cal['samples']))
+    units = [ d for d in CALIBRATIONS if d in cal ]
+    line.append('cals:    {}'.format(', '.join(units) if units else '<none>'))
+    return '\n'.join(line)
+
+
+###############################
+# measurement
+###############################
+
 def measure(cal, sweep, samples, average):
     samples = samples or cal['samples']
     freq = cal_frequencies(cal=cal)
     s = sweep(start=freq[0], stop=freq[-1], points=len(freq), samples=samples)
     s = np.average(s, axis=0) if average else np.median(s, axis=0)
     return freq, s
-
-
-def write_touchstone(freq, data, gamma):
-    line = []
-    line.append('# MHz S MA R 50')
-    for f, d in zip(freq, data):
-        entry = ' {:14.5g} {:9.3f}'
-        one = entry.format(abs(d[0]), np.angle(d[0], deg=True))
-        two = entry.format(abs(d[1]), np.angle(d[1], deg=True))
-        if gamma:
-            line.append('{:<10.6g}{}'.format(f/1e6, one))
-        else:
-            line.append('{:<10.6g}{}{}{}{}'.format(f/1e6, one, two, two, one))
-    return '\n'.join(line)
-
-
-def do_sweep(sweep, start, stop, points, samples, average, filename, gamma=None):
-    cal = cal_load(filename)
-    cal_interpolate(cal=cal, start=start, stop=stop, points=points)
-    freq, data = measure(cal=cal, sweep=sweep, samples=samples, average=average)
-    data = cal_correct(cal=cal, data=data)
-    text = write_touchstone(freq=freq, data=data, gamma=gamma)
-    return text
 
 
 def do_calibration(sweep, unit, filename, average):
@@ -568,16 +605,13 @@ def do_calibration(sweep, unit, filename, average):
     np.savez(filename, **cal)
 
 
-def do_info(filename):
+def do_sweep(sweep, start, stop, points, samples, average, filename, gamma=None):
     cal = cal_load(filename)
-    line = []
-    line.append('start:   {:.6g} MHz'.format(cal['start'] / 1e6))
-    line.append('stop:    {:.6g} MHz'.format(cal['stop'] / 1e6))
-    line.append('points:  {:d}'.format(cal['points']))
-    line.append('samples: {:d}'.format(cal['samples']))
-    units = [ d for d in CALIBRATIONS if d in cal ]
-    line.append('cals:    {}'.format(', '.join(units) if units else '<none>'))
-    return '\n'.join(line)
+    cal_interpolate(cal=cal, start=start, stop=stop, points=points)
+    freq, data = measure(cal=cal, sweep=sweep, samples=samples, average=average)
+    data = cal_correct(cal=cal, data=data)
+    text = write_touchstone(freq=freq, data=data, gamma=gamma)
+    return text
 
 
 def cli(args):
@@ -602,7 +636,7 @@ def cli(args):
 
     # show details
     if args.info:
-        buf = do_info(filename=args.filename)
+        buf = cal_info(filename=args.filename)
         print(buf)
         return
 
@@ -629,6 +663,24 @@ def getvna(device=None, filename=CALFILE):
     return fn
 
 
+def getremote(hostname='127.0.0.1', port=8080):
+    def fn(start=None, stop=None, points=None, samples=None, average=None, gamma=None):
+        text = request('reset', hostname=hostname, port=port)
+        if start: request('start', start, hostname=hostname, port=port)
+        if stop: request('stop', stop, hostname=hostname, port=port)
+        if points: request('points', points, hostname=hostname, port=port)
+        if samples: request('samples', samples, hostname=hostname, port=port)
+        if average: request('average', average, hostname=hostname, port=port)
+        if gamma: 
+            text = request('gamma', hostname=hostname, port=port)
+        else:
+            text = request('', hostname=hostname, port=port)
+        f, s = read_touchstone(text)
+        return f, s[:,0]
+    return fn
+
+
+
 def main():
     args = parse_args()
     if args.server:
@@ -638,7 +690,7 @@ def main():
             print(str(e), file=sys.stderr)
             return
         try:
-            httpserver = HTTPServer((args.host, args.port), serverfactory(sweep))
+            httpserver = HTTPServer((args.hostname, args.port), serverfactory(sweep))
             httpserver.serve_forever()
         except KeyboardInterrupt:
             httpserver.server_close()
