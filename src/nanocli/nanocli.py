@@ -131,9 +131,9 @@ def write_touchstone(freq, data, gamma):
         one = entry.format(db(d[0]), np.angle(d[0], deg=True))
         two = entry.format(db(d[1]), np.angle(d[1], deg=True))
         if gamma:
-            line.append('{:<10.6g}{}'.format(f/1e6, one))
+            line.append('{:<10.6f}{}'.format(f/1e6, one))
         else:
-            line.append('{:<10.6g}{}{}{}{}'.format(f/1e6, one, two, two, one))
+            line.append('{:<10.6f}{}{}{}{}'.format(f/1e6, one, two, two, one))
     return '\n'.join(line)
 
 
