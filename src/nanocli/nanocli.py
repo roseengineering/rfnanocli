@@ -680,7 +680,6 @@ def getremote(hostname='127.0.0.1', port=8080):
     return fn
 
 
-
 def main():
     args = parse_args()
     if args.server:
@@ -699,5 +698,4 @@ def main():
             cli(args)
         except RuntimeError as e:
             print(str(e), file=sys.stderr)
-
 
