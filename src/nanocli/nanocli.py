@@ -11,7 +11,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 # configuration
 
 CALIBRATIONS = [ 'open', 'short', 'load', 'thru' ]
-CALFILE      = 'cal.npz'
+CALFILE = 'cal.npz'
+
+DEFAULT_FSTART = 100e3
+DEFAULT_FSTOP = 10.1e6
+DEFAULT_POINTS = 101
+DEFAULT_SAMPLES = 3
 
 
 def parse_args():
@@ -312,6 +317,7 @@ def serverfactory(sweep):
 def nanovna(dev):
     FSTART = 6348  # si5351 limit
     FSTOP = 2.7e9
+    POINTS = 401   # f303 based nanovna
     VID = 0x0483
     PID = 0x5740
 
@@ -360,13 +366,11 @@ def nanovna(dev):
 
     def sweep(start, stop, points, samples):
         start, stop, points = round(start), round(stop), round(points)
-        # points should also be <= 101, but dislord extended it to 301
-        assert(points > 0)
         assert(stop >= start)
         assert(start >= FSTART and stop <= FSTOP)
+        assert(points > 0 and points <= POINTS)
         # since Si5351 multisynth divider ratio < 2048, 6348 is the min freq:
         # 26000000 {xtal} * 32 {pll_n} / (6348 {freq} << 6 {rdiv}) = 2047.9
-        freq = np.linspace(start, stop, points)
         clear_state(ser)
         command(ser, "cal off")
         data = []
@@ -374,8 +378,8 @@ def nanovna(dev):
             d = scan(ser, start=start, stop=stop, points=points)
             data.append(d)
         data = np.array(data)
-        command(ser, "resume")  # resume and update sweep frequencies without calibration
         command(ser, "cal on")
+        command(ser, "resume")  # resume and update sweep frequencies without calibration
         return data
 
     if dev.vid == VID and dev.pid == PID:
@@ -384,9 +388,9 @@ def nanovna(dev):
 
 
 def saa2(dev):
-    POINTS = 255
     FSTART = 10e3 
     FSTOP = 4400e6
+    POINTS = 255
     VID = 0x04b4
     PID = 0x0008
 
@@ -432,10 +436,9 @@ def saa2(dev):
 
     def sweep(start, stop, points, samples):
         start, stop, points = round(start), round(stop), round(points)
-        assert(points > 0 and points <= POINTS)
         assert(stop >= start)
         assert(start >= FSTART and stop <= FSTOP)
-        freq = np.linspace(start, stop, points)
+        assert(points > 0 and points <= POINTS)
         data = []
         try:
             for n in range(samples):
@@ -547,14 +550,10 @@ def cal_interpolate(cal, start, stop, points):
 
 
 def cal_init(start, stop, points, samples, filename):
-    FSTART = 100e3
-    FSTOP = 10.1e6
-    POINTS = 101
-    SAMPLES = 3
-    start = start or FSTART
-    stop = stop or FSTOP
-    points = points or POINTS
-    samples = samples or SAMPLES
+    start = start or DEFAULT_FSTART
+    stop = stop or DEFAULT_FSTOP
+    points = points or DEFAULT_POINTS
+    samples = samples or DEFAULT_SAMPLES
     assert(stop >= start)
     assert(points > 0)
     assert(samples > 0)
@@ -621,18 +620,10 @@ def cli(args):
 
     # which calibration to run
     unit = [ d for d in CALIBRATIONS if args.__dict__.get(d) ]
-
-    # error check
     if len(unit) > 1:
         raise RuntimeError('Cannot do more than one calibration at a time.')
     if unit and args.init:
-        raise RuntimeError('Cannot both intialize and calibrate.')
-
-    # initialize calibration
-    if args.init:
-        cal_init(start=args.start, stop=args.stop, points=args.points,
-                 samples=args.samples, filename=args.filename)
-        return
+        raise RuntimeError('Cannot initialize and calibrate as the same time.')
 
     # show details
     if args.info:
@@ -640,14 +631,22 @@ def cli(args):
         print(buf)
         return
 
+    # initialize calibration
+    if args.init:
+        cal_init(start=args.start, stop=args.stop, points=args.points,
+            samples=args.samples, filename=args.filename)
+        return
+
     # open device
     sweep = getport(device=args.device)
+
+    # run a sweep
     if unit:
         do_calibration(sweep=sweep, unit=unit[0], average=args.average, filename=args.filename)
     else:
         buf = do_sweep(sweep=sweep, start=args.start, stop=args.stop, 
-                       points=args.points, samples=args.samples, average=args.average, 
-                       gamma=args.gamma, filename=args.filename)
+            points=args.points, samples=args.samples, average=args.average, 
+            gamma=args.gamma, filename=args.filename)
         print(buf)
 
 
