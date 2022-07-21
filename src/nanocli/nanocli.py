@@ -379,7 +379,7 @@ def nanovna(dev):
             data.append(d)
         data = np.array(data)
         command(ser, "cal on")
-        command(ser, "resume")  # resume and update sweep frequencies without calibration
+        command(ser, "resume")  # resume 
         return data
 
     if dev.vid == VID and dev.pid == PID:
@@ -631,17 +631,14 @@ def cli(args):
         print(buf)
         return
 
-    # initialize calibration
-    if args.init:
-        cal_init(start=args.start, stop=args.stop, points=args.points,
-            samples=args.samples, filename=args.filename)
-        return
-
     # open device
     sweep = getport(device=args.device)
 
-    # run a sweep
-    if unit:
+    # operations
+    if args.init:
+        cal_init(start=args.start, stop=args.stop, points=args.points,
+            samples=args.samples, filename=args.filename)
+    elif unit:
         do_calibration(sweep=sweep, unit=unit[0], average=args.average, filename=args.filename)
     else:
         buf = do_sweep(sweep=sweep, start=args.start, stop=args.stop, 
