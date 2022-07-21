@@ -34,6 +34,8 @@ def parse_args():
     parser.add_argument('--short', action='store_true', help='short calibration')
     parser.add_argument('--load', action='store_true', help='load calibration')
     parser.add_argument('--thru', action='store_true', help='thru calibration')
+    parser.add_argument('--save', help='save calibration file')
+    parser.add_argument('--recall', help='load calibration file')
     # REST server
     parser.add_argument('--server', action='store_true', help='enter REST server mode')
     parser.add_argument('--hostname', default='0.0.0.0', help='REST server host name')
@@ -627,8 +629,22 @@ def cli(args):
 
     # show details
     if args.info:
-        buf = cal_info(filename=args.filename)
-        print(buf)
+        text = cal_info(filename=args.filename)
+        print(text)
+        return
+
+    if args.save:
+        filename = args.save
+        if os.path.splitext(filename)[1] != '.npz':
+            filename += '.npz'
+        shutil.copyfile(CALFILE, filename)
+        return
+
+    if args.recall:
+        filename = args.recall
+        if os.path.splitext(filename)[1] != '.npz':
+            filename += '.npz'
+        shutil.copyfile(filename, CALFILE) 
         return
 
     # open device
@@ -641,10 +657,10 @@ def cli(args):
     elif unit:
         do_calibration(sweep=sweep, unit=unit[0], average=args.average, filename=args.filename)
     else:
-        buf = do_sweep(sweep=sweep, start=args.start, stop=args.stop, 
+        text = do_sweep(sweep=sweep, start=args.start, stop=args.stop, 
             points=args.points, samples=args.samples, average=args.average, 
             gamma=args.gamma, filename=args.filename)
-        print(buf)
+        print(text)
 
 
 def getvna(device=None, filename=CALFILE):
