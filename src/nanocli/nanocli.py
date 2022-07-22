@@ -10,8 +10,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # configuration
 
-CALIBRATIONS = [ 'open', 'short', 'load', 'thru' ]
 CALFILE = 'cal.npz'
+CALIBRATIONS = [ 'open', 'short', 'load', 'thru' ]
 
 DEFAULT_FSTART = 100e3
 DEFAULT_FSTOP = 10.1e6
@@ -27,24 +27,24 @@ def parse_args():
     parser.add_argument('--stop', type=float, help='stop frequency (Hz)')
     parser.add_argument('--points', type=int, help='frequency points in sweep')
     parser.add_argument('--samples', type=int, help='samples per frequency')
-    parser.add_argument('--average', action='store_true', help='average samples')
     # SOLT calibration
     parser.add_argument('--init', action='store_true', help='initialize calibration')
     parser.add_argument('--open', action='store_true', help='open calibration')
     parser.add_argument('--short', action='store_true', help='short calibration')
     parser.add_argument('--load', action='store_true', help='load calibration')
     parser.add_argument('--thru', action='store_true', help='thru calibration')
-    parser.add_argument('--save', help='save calibration file')
-    parser.add_argument('--recall', help='load calibration file')
     # REST server
     parser.add_argument('--server', action='store_true', help='enter REST server mode')
     parser.add_argument('--hostname', default='0.0.0.0', help='REST server host name')
     parser.add_argument('--port', default=8080, type=int, help='REST server port number')
     # other flags
+    parser.add_argument('--save', help='save calibration file')
+    parser.add_argument('--recall', help='load calibration file')
+    parser.add_argument('--average', action='store_true', help='average samples')
+    parser.add_argument('--gamma',  action='store_true', help='output only S11')
     parser.add_argument('--device', help='tty device name of nanovna to use')
     parser.add_argument('--info',  action='store_true', help='show calibration info')
-    parser.add_argument('--list', action='store_true', help='list available devices')
-    parser.add_argument('--gamma',  action='store_true', help='output only S11')
+    parser.add_argument('-l', '--list', action='store_true', help='list available devices')
     args = parser.parse_args()
     return args
 
@@ -360,20 +360,21 @@ def nanovna(dev):
         cmd = "scan {:d} {:d} {:d} 111".format(start, stop, points)
         text = command(ser, cmd)
         d = np.array([[ float(c) for c in ln.split() ] for ln in text.split('\n') ])
-        freq = np.linspace(start, stop, points)
         assert(len(d) == points)
         assert(start == d[0,0])
         assert(stop == d[-1,0])
         return d[:,1::2] + 1j * d[:,2::2]
 
     def sweep(start, stop, points, samples):
-        start, stop, points = round(start), round(stop), round(points)
+        start, stop, points = round(start), round(stop), int(points)
         assert(stop >= start)
         assert(start >= FSTART and stop <= FSTOP)
         assert(points > 0 and points <= POINTS)
         # since Si5351 multisynth divider ratio < 2048, 6348 is the min freq:
         # 26000000 {xtal} * 32 {pll_n} / (6348 {freq} << 6 {rdiv}) = 2047.9
         clear_state(ser)
+        # alter ui
+        command(ser, f'sweep {start} {stop} {points}')
         command(ser, "cal off")
         data = []
         for i in range(samples):
@@ -437,7 +438,7 @@ def saa2(dev):
         send(ser, cmd)
 
     def sweep(start, stop, points, samples):
-        start, stop, points = round(start), round(stop), round(points)
+        start, stop, points = round(start), round(stop), int(points)
         assert(stop >= start)
         assert(start >= FSTART and stop <= FSTOP)
         assert(points > 0 and points <= POINTS)
@@ -464,12 +465,10 @@ def saa2(dev):
         ser = serial.Serial(dev.device)
         return sweep
 
-DEVICES = [ nanovna, saa2 ]
-
 
 def probe_devices():
     data = []
-    for fn in DEVICES:
+    for fn in [ nanovna, saa2 ]:
         for dev in list_ports.comports(include_links=True):
             sweep = fn(dev)
             if sweep is not None:
@@ -477,8 +476,8 @@ def probe_devices():
     return data
 
 
-def list_devices(data=None):
-    data = data or probe_devices()
+def list_devices():
+    data = probe_devices()
     for i in range(len(data)):
         fn, dev = data[i]
         m = re.match(r'<function (\w+)', str(fn))
@@ -493,7 +492,6 @@ def getport(device):
         if device is None or device == dev.device:
             return fn
     print("Use --device to select the NanoVNA to use:", file=sys.stderr)
-    list_devices(data)
     raise RuntimeError("No NanoVNA device found")
 
 
@@ -573,14 +571,14 @@ def cal_load(filename):
     return dict(npzfile)
 
 
-def cal_info(filename):
+def cal_info(filename, calibrations):
     cal = cal_load(filename)
     line = []
     line.append('start:   {:.6g} MHz'.format(cal['start'] / 1e6))
     line.append('stop:    {:.6g} MHz'.format(cal['stop'] / 1e6))
     line.append('points:  {:d}'.format(cal['points']))
     line.append('samples: {:d}'.format(cal['samples']))
-    units = [ d for d in CALIBRATIONS if d in cal ]
+    units = [ d for d in calibrations if d in cal ]
     line.append('cals:    {}'.format(', '.join(units) if units else '<none>'))
     return '\n'.join(line)
 
@@ -592,9 +590,9 @@ def cal_info(filename):
 def measure(cal, sweep, samples, average):
     samples = samples or cal['samples']
     freq = cal_frequencies(cal=cal)
-    s = sweep(start=freq[0], stop=freq[-1], points=len(freq), samples=samples)
-    s = np.average(s, axis=0) if average else np.median(s, axis=0)
-    return freq, s
+    data = sweep(start=freq[0], stop=freq[-1], points=len(freq), samples=samples)
+    data = np.average(data, axis=0) if average else np.median(data, axis=0)
+    return freq, data
 
 
 def do_calibration(sweep, unit, filename, average):
@@ -629,7 +627,7 @@ def cli(args):
 
     # show details
     if args.info:
-        text = cal_info(filename=args.filename)
+        text = cal_info(args.filename, calibrations=CALIBRATIONS)
         print(text)
         return
 
@@ -648,7 +646,7 @@ def cli(args):
         return
 
     # open device
-    sweep = getport(device=args.device)
+    sweep = getport(args.device)
 
     # operations
     if args.init:
@@ -671,7 +669,7 @@ def getvna(device=None, filename=CALFILE):
         sweep = getport(device)
         freq, data = measure(cal=cal, sweep=sweep, samples=samples, average=average)
         data = cal_correct(cal=cal, data=data)
-        return freq, data[:,0] if gamma else data
+        return freq, (data[:,0] if gamma else data)
     return fn
 
 

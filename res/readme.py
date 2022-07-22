@@ -36,11 +36,10 @@ of either nano.
 You must calibrate your nano separately to use this utility.
 The calibration data is stored in a npz file on your computer.
 
-Lastly, the utility takes steps not to disturb your nano UI settings.
-So you can sweep a different range of frequencies using nanocli than what the UI is sweeping,
-and the nano UI will be unaffected.
-Nanocli will neither upset your nano UI calibrations nor your UI frequency sweep
-settings.
+The utility however does disturb your nano UI settings.
+So if you sweep a different range of frequencies using nanocli than what the UI is sweeping,
+the nano UI sweep will be affected (but not on the SAA2).
+However nanocli will not upset your nano UI calibrations.
 
 ## How to Use
 
@@ -248,9 +247,9 @@ or from a Jupyter Notebook, for example.  The original nano
 had this ability through its (USB) serial interface and its "data" command.
 However the new SAA2 does not.  It uses a special binary
 protocol. Its measurements over the USB interface are also uncalibrated unlike the original nano. 
-Lastly and probably, most importantly, you cannot control its UI
+Lastly and probably, most importantly, with the SSA2 you cannot control its UI
 over USB.  So no more computer remote control visual operation of the
-device like I was able to do with the original nano.
+device like I was able to do with the original nanovna.
 As a result this utility is intended to unify the two nanos to satisfy my above need
 and do my remote control in Jupyter instead.
 
@@ -260,7 +259,7 @@ In order to perform a measurement sweep on the original nano, the
 utility first turns calibration off on the device.  Once the
 measurement is made, the utility will turn calibration back on.
 For the SAA2 nano, since its USB connection is always uncorrected
-its UI is unaffected.
+its UI and calibration is unaffected.
 
 ## Supported Nanovna Versions
 

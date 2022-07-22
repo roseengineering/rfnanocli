@@ -14,11 +14,10 @@ of either nano.
 You must calibrate your nano separately to use this utility.
 The calibration data is stored in a npz file on your computer.
 
-Lastly, the utility takes steps not to disturb your nano UI settings.
-So you can sweep a different range of frequencies using nanocli than what the UI is sweeping,
-and the nano UI will be unaffected.
-Nanocli will neither upset your nano UI calibrations nor your UI frequency sweep
-settings.
+The utility however does disturb your nano UI settings.
+So if you sweep a different range of frequencies using nanocli than what the UI is sweeping,
+the nano UI sweep will be affected (but not on the SAA2).
+However nanocli will not upset your nano UI calibrations.
 
 ## How to Use
 
@@ -29,11 +28,11 @@ After calibration, just issue the following on the command line.
 ```
 $ nanocli
 # MHz S DB R 50
-0.010000        -3.913     0.711     -89.613   108.579     -89.613   108.579      -3.913     0.711
-2.507500        -3.868    -3.115     -83.009  -142.147     -83.009  -142.147      -3.868    -3.115
-5.005000        -3.864    -5.961     -78.856   147.063     -78.856   147.063      -3.864    -5.961
-7.502500        -3.857    -8.809     -80.370    92.242     -80.370    92.242      -3.857    -8.809
-10.000000       -3.848   -11.653     -87.277  -149.738     -87.277  -149.738      -3.848   -11.653
+0.010000        -3.916     0.774     -78.076   168.800     -78.076   168.800      -3.916     0.774
+2.507500        -3.872    -3.108     -81.461  -161.075     -81.461  -161.075      -3.872    -3.108
+5.005000        -3.866    -5.933     -79.837   141.872     -79.837   141.872      -3.866    -5.933
+7.502500        -3.861    -8.791     -75.327   140.481     -75.327   140.481      -3.861    -8.791
+10.000000       -3.848   -11.627     -77.290  -175.443     -77.290  -175.443      -3.848   -11.627
 ```
 
 
@@ -84,11 +83,11 @@ Now let's run a sweep.
 ```
 $ nanocli --points 5
 # MHz S DB R 50
-0.010000        -3.913     0.731     -79.119   171.056     -79.119   171.056      -3.913     0.731
-2.507500        -3.870    -3.123     -79.311   142.052     -79.311   142.052      -3.870    -3.123
-5.005000        -3.864    -5.969     -78.451   177.080     -78.451   177.080      -3.864    -5.969
-7.502500        -3.857    -8.810     -76.131   112.559     -76.131   112.559      -3.857    -8.810
-10.000000       -3.848   -11.648     -89.146   -40.748     -89.146   -40.748      -3.848   -11.648
+0.010000        -3.918     0.777     -83.257   160.247     -83.257   160.247      -3.918     0.777
+2.507500        -3.870    -3.107     -76.490   154.620     -76.490   154.620      -3.870    -3.107
+5.005000        -3.865    -5.942     -78.517   161.184     -78.517   161.184      -3.865    -5.942
+7.502500        -3.861    -8.787     -82.264   139.254     -82.264   139.254      -3.861    -8.787
+10.000000       -3.848   -11.647     -78.900  -178.944     -78.900  -178.944      -3.848   -11.647
 ```
 
 
@@ -98,11 +97,11 @@ Write a s1p file to stdout.
 ```
 $ nanocli --gamma --points 5
 # MHz S DB R 50
-0.010000        -3.912     0.729
-2.507500        -3.868    -3.100
-5.005000        -3.863    -5.972
-7.502500        -3.858    -8.800
-10.000000       -3.846   -11.648
+0.010000        -3.916     0.777
+2.507500        -3.872    -3.099
+5.005000        -3.866    -5.945
+7.502500        -3.861    -8.779
+10.000000       -3.849   -11.639
 ```
 
 
@@ -142,10 +141,10 @@ The utility's command line usage is as follows:
 ```
 $ nanocli --help
 usage: nanocli [-h] [--filename FILENAME] [--start START] [--stop STOP]
-               [--points POINTS] [--samples SAMPLES] [--average] [--init]
-               [--open] [--short] [--load] [--thru] [--save SAVE]
-               [--recall RECALL] [--server] [--hostname HOSTNAME]
-               [--port PORT] [--device DEVICE] [--info] [--list] [--gamma]
+               [--points POINTS] [--samples SAMPLES] [--init] [--open]
+               [--short] [--load] [--thru] [--server] [--hostname HOSTNAME]
+               [--port PORT] [--save SAVE] [--recall RECALL] [--average]
+               [--gamma] [--device DEVICE] [--info] [-l]
 
 optional arguments:
   -h, --help           show this help message and exit
@@ -154,21 +153,21 @@ optional arguments:
   --stop STOP          stop frequency (Hz) (default: None)
   --points POINTS      frequency points in sweep (default: None)
   --samples SAMPLES    samples per frequency (default: None)
-  --average            average samples (default: False)
   --init               initialize calibration (default: False)
   --open               open calibration (default: False)
   --short              short calibration (default: False)
   --load               load calibration (default: False)
   --thru               thru calibration (default: False)
-  --save SAVE          save calibration file (default: None)
-  --recall RECALL      load calibration file (default: None)
   --server             enter REST server mode (default: False)
   --hostname HOSTNAME  REST server host name (default: 0.0.0.0)
   --port PORT          REST server port number (default: 8080)
+  --save SAVE          save calibration file (default: None)
+  --recall RECALL      load calibration file (default: None)
+  --average            average samples (default: False)
+  --gamma              output only S11 (default: False)
   --device DEVICE      tty device name of nanovna to use (default: None)
   --info               show calibration info (default: False)
-  --list               list available devices (default: False)
-  --gamma              output only S11 (default: False)
+  -l, --list           list available devices (default: False)
 ```
 
 
@@ -302,11 +301,11 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import getvna; f,d = getvna()(points=5); print(d)'
-[[ 6.37184704e-01+8.15329000e-03j -1.14370000e-05+1.40026000e-04j]
- [ 6.39591616e-01-3.48553480e-02j -5.65020000e-05-2.06080000e-05j]
- [ 6.37501376e-01-6.64256880e-02j -4.54610000e-05+2.94360000e-05j]
- [ 6.33734720e-01-9.79364320e-02j -8.36660000e-05-4.11200000e-06j]
- [ 6.28947200e-01-1.29724128e-01j -4.04380000e-05+2.39800000e-05j]]
+[[ 6.37063744e-01+8.3924100e-03j -5.44270000e-05+3.8226000e-05j]
+ [ 6.39495616e-01-3.4644088e-02j -3.26460000e-05-5.3480000e-05j]
+ [ 6.37371840e-01-6.6367896e-02j -3.15310000e-05-7.7803000e-05j]
+ [ 6.33777408e-01-9.7815464e-02j -4.18360000e-05+5.3844000e-05j]
+ [ 6.28913728e-01-1.2947504e-01j -7.79510000e-05+5.7558000e-05j]]
 ```
 
 
@@ -318,9 +317,9 @@ or from a Jupyter Notebook, for example.  The original nano
 had this ability through its (USB) serial interface and its "data" command.
 However the new SAA2 does not.  It uses a special binary
 protocol. Its measurements over the USB interface are also uncalibrated unlike the original nano. 
-Lastly and probably, most importantly, you cannot control its UI
+Lastly and probably, most importantly, with the SSA2 you cannot control its UI
 over USB.  So no more computer remote control visual operation of the
-device like I was able to do with the original nano.
+device like I was able to do with the original nanovna.
 As a result this utility is intended to unify the two nanos to satisfy my above need
 and do my remote control in Jupyter instead.
 
@@ -330,7 +329,7 @@ In order to perform a measurement sweep on the original nano, the
 utility first turns calibration off on the device.  Once the
 measurement is made, the utility will turn calibration back on.
 For the SAA2 nano, since its USB connection is always uncorrected
-its UI is unaffected.
+its UI and calibration is unaffected.
 
 ## Supported Nanovna Versions
 
