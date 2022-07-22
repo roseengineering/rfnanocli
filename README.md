@@ -27,12 +27,7 @@ After calibration, just issue the following on the command line.
 
 ```
 $ nanocli
-# MHz S DB R 50
-0.010000        -3.916     0.774     -78.076   168.800     -78.076   168.800      -3.916     0.774
-2.507500        -3.872    -3.108     -81.461  -161.075     -81.461  -161.075      -3.872    -3.108
-5.005000        -3.866    -5.933     -79.837   141.872     -79.837   141.872      -3.866    -5.933
-7.502500        -3.861    -8.791     -75.327   140.481     -75.327   140.481      -3.861    -8.791
-10.000000       -3.848   -11.627     -77.290  -175.443     -77.290  -175.443      -3.848   -11.627
+No NanoVNA device found.
 ```
 
 
@@ -47,6 +42,7 @@ frequency sweep.
 
 ```
 $ nanocli --init --start 10e3 --stop 10e6 --points 101
+No NanoVNA device found.
 ```
 
 
@@ -55,11 +51,11 @@ Print details on the calibration file.
 
 ```
 $ nanocli --info
-start:   0.01 MHz
-stop:    10 MHz
-points:  101
+start:   5.9 MHz
+stop:    6.1 MHz
+points:  401
 samples: 3
-cals:    <none>
+cals:    open, short, load
 ```
 
 
@@ -82,12 +78,7 @@ Now let's run a sweep.
 
 ```
 $ nanocli --points 5
-# MHz S DB R 50
-0.010000        -3.918     0.777     -83.257   160.247     -83.257   160.247      -3.918     0.777
-2.507500        -3.870    -3.107     -76.490   154.620     -76.490   154.620      -3.870    -3.107
-5.005000        -3.865    -5.942     -78.517   161.184     -78.517   161.184      -3.865    -5.942
-7.502500        -3.861    -8.787     -82.264   139.254     -82.264   139.254      -3.861    -8.787
-10.000000       -3.848   -11.647     -78.900  -178.944     -78.900  -178.944      -3.848   -11.647
+No NanoVNA device found.
 ```
 
 
@@ -96,12 +87,7 @@ Write a s1p file to stdout.
 
 ```
 $ nanocli --gamma --points 5
-# MHz S DB R 50
-0.010000        -3.916     0.777
-2.507500        -3.872    -3.099
-5.005000        -3.866    -5.945
-7.502500        -3.861    -8.779
-10.000000       -3.849   -11.639
+No NanoVNA device found.
 ```
 
 
@@ -282,18 +268,22 @@ Import this library using import nanocli.  The function
 getvna is provided.  After passing it the cal file, 
 the device name, the start frequency, the stop frequency, and 
 the number of frequency points to measure, it returns a function which 
-performs the measurement returning a (freq, data) tuple result.
+performs the measurement.  (To access the nanovna over REST use getremote i
+nstead of getvna.)
+
+When called this function returns a (freq, data) tuple result.
 freq is an array of frequencies points.  data is a 2xN array
 of s11 and s21 calibration corrected measurements.
 
 The interface for sweep is as follows.  Changing the range
 for the frequency sweep by passing values for
 start, stop or points will force an interpolation of the calibration
-data.
+data.  
 
 ```python
+sweep = getremote(hostname='127.0.0.1', port=8080)
 sweep = getvna(device=None, filename='cal')
-sweep(start=None, stop=None, points=None, gamma=False, samples=None)
+sweep(start=None, stop=None, points=None, samples=None, average=None, gamma=None)
 ```
 
 For example:
@@ -301,11 +291,13 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import getvna; f,d = getvna()(points=5); print(d)'
-[[ 6.37063744e-01+8.3924100e-03j -5.44270000e-05+3.8226000e-05j]
- [ 6.39495616e-01-3.4644088e-02j -3.26460000e-05-5.3480000e-05j]
- [ 6.37371840e-01-6.6367896e-02j -3.15310000e-05-7.7803000e-05j]
- [ 6.33777408e-01-9.7815464e-02j -4.18360000e-05+5.3844000e-05j]
- [ 6.28913728e-01-1.2947504e-01j -7.79510000e-05+5.7558000e-05j]]
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/vol/sda1/share/rfnanocli/src/nanocli/nanocli.py", line 669, in fn
+    sweep = getport(device)
+  File "/vol/sda1/share/rfnanocli/src/nanocli/nanocli.py", line 490, in getport
+    raise RuntimeError("No NanoVNA device found.")
+RuntimeError: No NanoVNA device found.
 ```
 
 

@@ -221,18 +221,22 @@ Import this library using import nanocli.  The function
 getvna is provided.  After passing it the cal file, 
 the device name, the start frequency, the stop frequency, and 
 the number of frequency points to measure, it returns a function which 
-performs the measurement returning a (freq, data) tuple result.
+performs the measurement.  (To access the nanovna over REST use getremote i
+nstead of getvna.)
+
+When called this function returns a (freq, data) tuple result.
 freq is an array of frequencies points.  data is a 2xN array
 of s11 and s21 calibration corrected measurements.
 
 The interface for sweep is as follows.  Changing the range
 for the frequency sweep by passing values for
 start, stop or points will force an interpolation of the calibration
-data.
+data.  
 
 ```python
+sweep = getremote(hostname='127.0.0.1', port=8080)
 sweep = getvna(device=None, filename='cal')
-sweep(start=None, stop=None, points=None, gamma=False, samples=None)
+sweep(start=None, stop=None, points=None, samples=None, average=None, gamma=None)
 ```
 
 For example:
