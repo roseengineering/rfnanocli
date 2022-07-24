@@ -14,10 +14,10 @@ of either nano.
 You must calibrate your nano separately to use this utility.
 The calibration data is stored in a npz file on your computer.
 
-The utility however does disturb your nano UI settings.
+Note, the utility will disturb your nano UI settings (but not on the SAA2).
 So if you sweep a different range of frequencies using nanocli than what the UI is sweeping,
-the nano UI sweep will be affected (but not on the SAA2).
-However nanocli will not upset your nano UI calibrations.
+the UI will be affected.
+That said, nanocli will not upset your nano UI calibrations. They remain as they were.
 
 ## How to Use
 
@@ -27,7 +27,12 @@ After calibration, just issue the following on the command line.
 
 ```
 $ nanocli
-No NanoVNA device found.
+# MHz S DB R 50
+0.010000   6.37082e-01     0.78 1.16755e-04  -176.23 0.00000e+00     0.00 0.00000e+00     0.00
+2.507500   6.40304e-01    -0.64 8.56011e-05   100.21 0.00000e+00     0.00 0.00000e+00     0.00
+5.005000   6.40406e-01    -1.01 7.13514e-05   124.75 0.00000e+00     0.00 0.00000e+00     0.00
+7.502500   6.40326e-01    -1.43 8.98970e-05   166.18 0.00000e+00     0.00 0.00000e+00     0.00
+10.000000  6.40227e-01    -1.82 1.28297e-04   146.16 0.00000e+00     0.00 0.00000e+00     0.00
 ```
 
 
@@ -42,7 +47,6 @@ frequency sweep.
 
 ```
 $ nanocli --init --start 10e3 --stop 10e6 --points 101
-No NanoVNA device found.
 ```
 
 
@@ -51,11 +55,11 @@ Print details on the calibration file.
 
 ```
 $ nanocli --info
-start:   5.9 MHz
-stop:    6.1 MHz
-points:  401
+start:   0.01 MHz
+stop:    10 MHz
+points:  101
 samples: 3
-cals:    open, short, load
+cals:    <none>
 ```
 
 
@@ -78,7 +82,12 @@ Now let's run a sweep.
 
 ```
 $ nanocli --points 5
-No NanoVNA device found.
+# MHz S DB R 50
+0.010000   6.37023e-01     0.79 8.05478e-05  -168.82 0.00000e+00     0.00 0.00000e+00     0.00
+2.507500   6.40386e-01    -0.64 7.64227e-05   129.30 0.00000e+00     0.00 0.00000e+00     0.00
+5.005000   6.40361e-01    -1.03 2.10763e-04   149.06 0.00000e+00     0.00 0.00000e+00     0.00
+7.502500   6.40220e-01    -1.41 1.05194e-04    98.22 0.00000e+00     0.00 0.00000e+00     0.00
+10.000000  6.40273e-01    -1.81 1.39570e-04   116.61 0.00000e+00     0.00 0.00000e+00     0.00
 ```
 
 
@@ -87,7 +96,12 @@ Write a s1p file to stdout.
 
 ```
 $ nanocli --gamma --points 5
-No NanoVNA device found.
+# MHz S DB R 50
+0.010000   6.37070e-01     0.78
+2.507500   6.40362e-01    -0.65
+5.005000   6.40413e-01    -1.01
+7.502500   6.40350e-01    -1.40
+10.000000  6.40260e-01    -1.82
 ```
 
 
@@ -291,13 +305,11 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import getvna; f,d = getvna()(points=5); print(d)'
-Traceback (most recent call last):
-  File "<string>", line 1, in <module>
-  File "/vol/sda1/share/rfnanocli/src/nanocli/nanocli.py", line 669, in fn
-    sweep = getport(device)
-  File "/vol/sda1/share/rfnanocli/src/nanocli/nanocli.py", line 490, in getport
-    raise RuntimeError("No NanoVNA device found.")
-RuntimeError: No NanoVNA device found.
+[[ 6.36909376e-01+8.7103100e-03j -4.34980000e-05-1.2667600e-04j]
+ [ 6.40288576e-01-7.1707060e-03j -6.31060000e-05-1.9919000e-05j]
+ [ 6.40350016e-01-1.1563366e-02j -1.17534000e-04+1.1852800e-04j]
+ [ 6.40137856e-01-1.5716456e-02j -1.05928000e-04-1.9051000e-05j]
+ [ 6.39925696e-01-2.0305866e-02j -1.32174000e-04+9.9447000e-05j]]
 ```
 
 

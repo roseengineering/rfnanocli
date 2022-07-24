@@ -63,10 +63,6 @@ def request(path, data=None, hostname='127.0.0.1', port=8080):
 # touchstone routines
 ###############################
 
-def db(x):
-    return 20 * np.log10(abs(x))
-
-
 def rect(x, y, dtype):
     if dtype == 'db' or dtype =='ma':
         x = 10**(x / 20) if dtype == 'db' else x
@@ -133,14 +129,15 @@ def read_touchstone(text):
 def write_touchstone(freq, data, gamma):
     line = []
     line.append('# MHz S DB R 50')
-    entry = ' {:11.3f} {:9.3f}'
+    entry = ' {:11.5e} {:8.2f}'
     for f, d in zip(freq, data):
-        one = entry.format(db(d[0]), np.angle(d[0], deg=True))
-        two = entry.format(db(d[1]), np.angle(d[1], deg=True))
+        one = entry.format(abs(d[0]), np.angle(d[0], deg=True))
+        two = entry.format(abs(d[1]), np.angle(d[1], deg=True))
+        zero = entry.format(0, 0)
         if gamma:
             line.append('{:<10.6f}{}'.format(f/1e6, one))
         else:
-            line.append('{:<10.6f}{}{}{}{}'.format(f/1e6, one, two, two, one))
+            line.append('{:<10.6f}{}{}{}{}'.format(f/1e6, one, two, zero, zero))
     return '\n'.join(line)
 
 
