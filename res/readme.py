@@ -178,7 +178,7 @@ sweep(start=None, stop=None)
 
 For example:
 
-{run("python3 -c 'from nanocli import getvna; f,d = getvna()(points=5); print(d)'")}
+{run("python3 -c 'from nanocli import getvna; f,d = getvna()(start=3e6, stop=6e6); print(d)' | head")}
 
 
 ## Reason for This Utility
