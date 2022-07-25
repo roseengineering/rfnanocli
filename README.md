@@ -28,11 +28,11 @@ After calibration, just issue the following on the command line.
 ```
 $ nanocli
 # MHz S DB R 50
-0.010000   6.37082e-01     0.78 1.16755e-04  -176.23 0.00000e+00     0.00 0.00000e+00     0.00
-2.507500   6.40304e-01    -0.64 8.56011e-05   100.21 0.00000e+00     0.00 0.00000e+00     0.00
-5.005000   6.40406e-01    -1.01 7.13514e-05   124.75 0.00000e+00     0.00 0.00000e+00     0.00
-7.502500   6.40326e-01    -1.43 8.98970e-05   166.18 0.00000e+00     0.00 0.00000e+00     0.00
-10.000000  6.40227e-01    -1.82 1.28297e-04   146.16 0.00000e+00     0.00 0.00000e+00     0.00
+0.100000   1.82305e-02   -57.16 4.20330e-05   124.47 0.00000e+00     0.00 0.00000e+00     0.00
+2.575000   1.04345e-02     6.59 1.63317e-05  -137.17 0.00000e+00     0.00 0.00000e+00     0.00
+5.050000   1.15557e-02    13.33 2.60198e-05    24.49 0.00000e+00     0.00 0.00000e+00     0.00
+7.525000   1.28045e-02    15.85 3.25940e-05   177.34 0.00000e+00     0.00 0.00000e+00     0.00
+10.000000  1.38885e-02    17.16 5.32466e-05   135.07 0.00000e+00     0.00 0.00000e+00     0.00
 ```
 
 
@@ -46,7 +46,7 @@ frequency sweep.
 
 
 ```
-$ nanocli --init --start 10e3 --stop 10e6 --points 101
+$ nanocli --init --start 100e3 --stop 10e6 --points 401
 ```
 
 
@@ -55,10 +55,11 @@ Print details on the calibration file.
 
 ```
 $ nanocli --info
-start:   0.01 MHz
+start:   0.1 MHz
 stop:    10 MHz
-points:  101
+points:  401
 samples: 3
+average: false
 cals:    <none>
 ```
 
@@ -81,13 +82,17 @@ Now let's run a sweep.
 
 
 ```
-$ nanocli --points 5
+$ nanocli | head
 # MHz S DB R 50
-0.010000   6.37023e-01     0.79 8.05478e-05  -168.82 0.00000e+00     0.00 0.00000e+00     0.00
-2.507500   6.40386e-01    -0.64 7.64227e-05   129.30 0.00000e+00     0.00 0.00000e+00     0.00
-5.005000   6.40361e-01    -1.03 2.10763e-04   149.06 0.00000e+00     0.00 0.00000e+00     0.00
-7.502500   6.40220e-01    -1.41 1.05194e-04    98.22 0.00000e+00     0.00 0.00000e+00     0.00
-10.000000  6.40273e-01    -1.81 1.39570e-04   116.61 0.00000e+00     0.00 0.00000e+00     0.00
+0.100000   1.86329e-02   -58.05 3.47374e-05  -119.32 0.00000e+00     0.00 0.00000e+00     0.00
+0.124750   1.58401e-02   -52.33 3.75332e-05  -179.82 0.00000e+00     0.00 0.00000e+00     0.00
+0.149500   1.42232e-02   -47.46 7.80899e-05  -176.16 0.00000e+00     0.00 0.00000e+00     0.00
+0.174250   1.32134e-02   -42.74 8.08887e-05   169.80 0.00000e+00     0.00 0.00000e+00     0.00
+0.199000   1.23884e-02   -38.60 7.48856e-05   121.35 0.00000e+00     0.00 0.00000e+00     0.00
+0.223750   1.16958e-02   -35.45 1.26412e-04   -76.12 0.00000e+00     0.00 0.00000e+00     0.00
+0.248500   1.13386e-02   -32.08 1.01752e-04   -88.90 0.00000e+00     0.00 0.00000e+00     0.00
+0.273250   1.09931e-02   -29.77 9.79434e-05    97.15 0.00000e+00     0.00 0.00000e+00     0.00
+0.298000   1.08332e-02   -27.70 2.59980e-05  -117.97 0.00000e+00     0.00 0.00000e+00     0.00
 ```
 
 
@@ -95,13 +100,17 @@ Write a s1p file to stdout.
 
 
 ```
-$ nanocli --gamma --points 5
+$ nanocli --gamma | head
 # MHz S DB R 50
-0.010000   6.37070e-01     0.78
-2.507500   6.40362e-01    -0.65
-5.005000   6.40413e-01    -1.01
-7.502500   6.40350e-01    -1.40
-10.000000  6.40260e-01    -1.82
+0.100000   1.86381e-02   -58.17
+0.124750   1.58179e-02   -51.97
+0.149500   1.42243e-02   -47.67
+0.174250   1.29826e-02   -42.74
+0.199000   1.23597e-02   -38.57
+0.223750   1.18137e-02   -34.82
+0.248500   1.13314e-02   -32.23
+0.273250   1.10162e-02   -30.01
+0.298000   1.08663e-02   -27.91
 ```
 
 
@@ -141,28 +150,22 @@ The utility's command line usage is as follows:
 ```
 $ nanocli --help
 usage: nanocli [-h] [--filename FILENAME] [--start START] [--stop STOP]
-               [--points POINTS] [--samples SAMPLES] [--init] [--open]
-               [--short] [--load] [--thru] [--server] [--hostname HOSTNAME]
-               [--port PORT] [--save SAVE] [--recall RECALL] [--average]
-               [--gamma] [--device DEVICE] [--info] [-l]
+               [--init] [--open] [--short] [--load] [--thru] [--points POINTS]
+               [--samples SAMPLES] [--average] [--gamma] [--device DEVICE]
+               [--info] [-l]
 
 optional arguments:
   -h, --help           show this help message and exit
   --filename FILENAME  calibration file (default: cal.npz)
   --start START        start frequency (Hz) (default: None)
   --stop STOP          stop frequency (Hz) (default: None)
-  --points POINTS      frequency points in sweep (default: None)
-  --samples SAMPLES    samples per frequency (default: None)
   --init               initialize calibration (default: False)
   --open               open calibration (default: False)
   --short              short calibration (default: False)
   --load               load calibration (default: False)
   --thru               thru calibration (default: False)
-  --server             enter REST server mode (default: False)
-  --hostname HOSTNAME  REST server host name (default: 0.0.0.0)
-  --port PORT          REST server port number (default: 8080)
-  --save SAVE          save calibration file (default: None)
-  --recall RECALL      load calibration file (default: None)
+  --points POINTS      frequency points in sweep (default: None)
+  --samples SAMPLES    samples per frequency (default: None)
   --average            average samples (default: False)
   --gamma              output only S11 (default: False)
   --device DEVICE      tty device name of nanovna to use (default: None)
@@ -215,75 +218,13 @@ for a s2p touchstone file.  If the --gamma option
 is passed on the command line the output will be
 formatted for a s1p touchstone file.
 
-## REST Server
-
-Passing the --server option starts the REST server for
-remote control of your NanoVNAs.
-
-The following REST commands display or update the current
-value of the corresponding command line setting.  For PUT
-(or POST), pass the value of the option to set in the body 
-of your request as a text string.  To reset all the options
-back to their defaults use the /reset REST command
-
-```
-GET or PUT /start
-GET or PUT /stop
-GET or PUT /points
-GET or PUT /samples
-GET or PUT /average
-GET /reset
-```
-
-To create, get details about, load or save a calibration file use the 
-following REST commands.  To save the current calibration to a file or 
-to load (ie. recall) a file as the current calibration, 
-pass its name as a text string in the request body.
-
-```
-GET /init
-GET /info
-PUT /save
-PUT /recall
-```
-
-The following REST commands will perform a sweep on a NanoVNA and then
-either save the results to the current calibration or return the results
-in the response body using the touchstone file format.
-
-```
-GET /
-GET /gamma
-GET /open
-GET /short
-GET /load
-GET /thru
-```
-
-For example to create a current calibration from 7.000Mhz to 7.060 MHz, use:
-
-```
-$ curl -d 7.00e6 http://localhost:8080/start
-$ curl -d 7.06e6 http://localhost:8080/stop
-$ curl -d 5 http://localhost:8080/samples
-$ curl http://localhost:8080/init
-$ curl http://localhost:8080/open
-$ curl http://localhost:8080/short
-$ curl http://localhost:8080/load
-$ curl http://localhost:8080/thru
-$ curl -d crystal http://localhost:8080/save
-$ curl -d crystal http://localhost:8080/recall
-$ curl http://localhost:8080/
-```
-
 ## Python Interface
 
 Import this library using import nanocli.  The function
 getvna is provided.  After passing it the cal file, 
 the device name, the start frequency, the stop frequency, and 
 the number of frequency points to measure, it returns a function which 
-performs the measurement.  (To access the nanovna over REST use getremote i
-nstead of getvna.)
+performs the measurement.
 
 When called this function returns a (freq, data) tuple result.
 freq is an array of frequencies points.  data is a 2xN array
@@ -295,9 +236,8 @@ start, stop or points will force an interpolation of the calibration
 data.  
 
 ```python
-sweep = getremote(hostname='127.0.0.1', port=8080)
 sweep = getvna(device=None, filename='cal')
-sweep(start=None, stop=None, points=None, samples=None, average=None, gamma=None)
+sweep(start=None, stop=None)
 ```
 
 For example:
@@ -305,11 +245,9 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import getvna; f,d = getvna()(points=5); print(d)'
-[[ 6.36909376e-01+8.7103100e-03j -4.34980000e-05-1.2667600e-04j]
- [ 6.40288576e-01-7.1707060e-03j -6.31060000e-05-1.9919000e-05j]
- [ 6.40350016e-01-1.1563366e-02j -1.17534000e-04+1.1852800e-04j]
- [ 6.40137856e-01-1.5716456e-02j -1.05928000e-04-1.9051000e-05j]
- [ 6.39925696e-01-2.0305866e-02j -1.32174000e-04+9.9447000e-05j]]
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+TypeError: fn() got an unexpected keyword argument 'points'
 ```
 
 

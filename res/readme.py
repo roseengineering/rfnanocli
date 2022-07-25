@@ -45,7 +45,7 @@ That said, nanocli will not upset your nano UI calibrations. They remain as they
 
 After calibration, just issue the following on the command line.
 
-{spawn("nanocli --init --start 10e3 --stop 10e6 --points 5")}
+{spawn("nanocli --init --start 100e3 --stop 10e6 --points 5")}
 {run("nanocli")}
 
 If an error gets thrown, like not being able to find the device or ValueError, try again
@@ -56,7 +56,7 @@ or reset your device.  None of the nanos have a perfect USB interface.
 First initialize the calibration file, setting the 
 frequency sweep.
 
-{run("nanocli --init --start 10e3 --stop 10e6 --points 101")}
+{run("nanocli --init --start 100e3 --stop 10e6 --points 401")}
 
 Print details on the calibration file.
 
@@ -78,11 +78,11 @@ calibration for the sweep.
 
 Now let's run a sweep.  
 
-{run("nanocli --points 5")}
+{run("nanocli | head")}
 
 Write a s1p file to stdout.
 
-{run("nanocli --gamma --points 5")}
+{run("nanocli --gamma | head")}
 
 Passing the --points option above
 forces an interpolation of the calibration data
@@ -154,75 +154,13 @@ for a s2p touchstone file.  If the --gamma option
 is passed on the command line the output will be
 formatted for a s1p touchstone file.
 
-## REST Server
-
-Passing the --server option starts the REST server for
-remote control of your NanoVNAs.
-
-The following REST commands display or update the current
-value of the corresponding command line setting.  For PUT
-(or POST), pass the value of the option to set in the body 
-of your request as a text string.  To reset all the options
-back to their defaults use the /reset REST command
-
-```
-GET or PUT /start
-GET or PUT /stop
-GET or PUT /points
-GET or PUT /samples
-GET or PUT /average
-GET /reset
-```
-
-To create, get details about, load or save a calibration file use the 
-following REST commands.  To save the current calibration to a file or 
-to load (ie. recall) a file as the current calibration, 
-pass its name as a text string in the request body.
-
-```
-GET /init
-GET /info
-PUT /save
-PUT /recall
-```
-
-The following REST commands will perform a sweep on a NanoVNA and then
-either save the results to the current calibration or return the results
-in the response body using the touchstone file format.
-
-```
-GET /
-GET /gamma
-GET /open
-GET /short
-GET /load
-GET /thru
-```
-
-For example to create a current calibration from 7.000Mhz to 7.060 MHz, use:
-
-```
-$ curl -d 7.00e6 http://localhost:8080/start
-$ curl -d 7.06e6 http://localhost:8080/stop
-$ curl -d 5 http://localhost:8080/samples
-$ curl http://localhost:8080/init
-$ curl http://localhost:8080/open
-$ curl http://localhost:8080/short
-$ curl http://localhost:8080/load
-$ curl http://localhost:8080/thru
-$ curl -d crystal http://localhost:8080/save
-$ curl -d crystal http://localhost:8080/recall
-$ curl http://localhost:8080/
-```
-
 ## Python Interface
 
 Import this library using import nanocli.  The function
 getvna is provided.  After passing it the cal file, 
 the device name, the start frequency, the stop frequency, and 
 the number of frequency points to measure, it returns a function which 
-performs the measurement.  (To access the nanovna over REST use getremote i
-nstead of getvna.)
+performs the measurement.
 
 When called this function returns a (freq, data) tuple result.
 freq is an array of frequencies points.  data is a 2xN array
@@ -234,9 +172,8 @@ start, stop or points will force an interpolation of the calibration
 data.  
 
 ```python
-sweep = getremote(hostname='127.0.0.1', port=8080)
 sweep = getvna(device=None, filename='cal')
-sweep(start=None, stop=None, points=None, samples=None, average=None, gamma=None)
+sweep(start=None, stop=None)
 ```
 
 For example:

@@ -1,4 +1,6 @@
 
-from .nanocli import main, getvna, getremote, request
+from .nanocli import (
+    main, getvna, read_touchstone, write_touchstone
+)
 from .version import __version__
 
