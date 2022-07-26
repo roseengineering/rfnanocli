@@ -114,7 +114,7 @@ def read_touchstone(text):
 
 def write_touchstone(freq, data, gamma=False):
     line = []
-    line.append('# MHz S DB R 50')
+    line.append('# MHz S MA R 50')
     entry = ' {:11.5e} {:8.2f}'
     for f, d in zip(freq, data):
         one = entry.format(abs(d[0]), np.angle(d[0], deg=True))
