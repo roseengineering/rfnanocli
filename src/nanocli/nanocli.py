@@ -35,7 +35,7 @@ def parse_args():
     # other flags
     parser.add_argument('--gamma',  action='store_true', help='output only S11')
     parser.add_argument('--device', help='tty device name of nanovna to use')
-    parser.add_argument('--info',  action='store_true', help='show calibration info')
+    parser.add_argument('-i', '--info',  action='store_true', help='show calibration info')
     parser.add_argument('-l', '--list', action='store_true', help='list available devices')
     args = parser.parse_args()
     return args
@@ -121,9 +121,9 @@ def write_touchstone(freq, data, gamma=False):
         two = entry.format(abs(d[1]), np.angle(d[1], deg=True))
         zero = entry.format(0, 0)
         if gamma:
-            line.append('{:<10.6f}{}'.format(f/1e6, one))
+            line.append('{:<12.6f}{}'.format(f/1e6, one))
         else:
-            line.append('{:<10.6f}{}{}{}{}'.format(f/1e6, one, two, zero, zero))
+            line.append('{:<12.6f}{}{}{}{}'.format(f/1e6, one, two, zero, zero))
     return '\n'.join(line)
 
 
@@ -349,12 +349,12 @@ def cal_frequencies(cal):
     return freq
 
 
-def cal_interpolate(cal, start, stop):
-    if ((start and start != cal['start'])
-       or (stop and stop != cal['stop'])):
+def cal_interpolate(cal, start, stop, points):
+    if start != cal['start'] or stop != cal['stop'] or points != cal['points']:
         freq = cal_frequencies(cal=cal)
         cal['start'] = start or cal['start']
         cal['stop'] = stop or cal['stop'] 
+        cal['points'] = points or cal['points'] 
         freq_new = cal_frequencies(cal=cal)
         for name in cal.keys():
             data = cal[name]
@@ -425,9 +425,9 @@ def do_calibration(sweep, unit, filename):
     np.savez(filename, **cal)
 
 
-def do_sweep(sweep, start, stop, gamma, filename):
+def do_sweep(sweep, start, stop, points, gamma, filename):
     cal = cal_load(filename)
-    cal_interpolate(cal=cal, start=start, stop=stop)
+    cal_interpolate(cal=cal, start=start, stop=stop, points=points)
     freq, data = measure(cal=cal, sweep=sweep)
     data = cal_correct(cal=cal, data=data)
     return write_touchstone(freq=freq, data=data, gamma=gamma)
@@ -462,16 +462,16 @@ def cli(args):
     elif unit:
         do_calibration(sweep=sweep, unit=unit[0], filename=args.filename)
     else:
-        text = do_sweep(sweep=sweep, start=args.start, stop=args.stop, 
-                        gamma=args.gamma, filename=args.filename)
+        text = do_sweep(sweep=sweep, start=args.start, stop=args.stop,
+            points=args.points, gamma=args.gamma, filename=args.filename)
         print(text)
 
 
 def getvna(device=None, filename=CALFILE):
     cal_orig = cal_load(filename)
-    def fn(start=None, stop=None):
+    def fn(start=None, stop=None, points=None):
         cal = cal_orig.copy()
-        cal_interpolate(cal=cal, start=start, stop=stop)
+        cal_interpolate(cal=cal, start=start, stop=stop, points=points)
         sweep = getport(device)
         freq, data = measure(cal=cal, sweep=sweep)
         data = cal_correct(cal=cal, data=data)

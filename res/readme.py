@@ -173,7 +173,7 @@ data.
 
 ```python
 sweep = getvna(device=None, filename='cal')
-sweep(start=None, stop=None)
+sweep(start=None, stop=None, points=None)
 ```
 
 For example:
