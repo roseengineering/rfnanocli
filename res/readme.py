@@ -171,9 +171,13 @@ for the frequency sweep by passing values for
 start, stop or points will force an interpolation of the calibration
 data.  
 
+Setting the filename option will save the results to this file.
+The function will then return the name of this file.  The file
+extension must be either 's1p' or 's2p'.
+
 ```python
-sweep = getvna(device=None, filename='cal')
-sweep(start=None, stop=None, points=None)
+sweep = getvna(device=None, calname='cal')
+sweep(start=None, stop=None, points=None, filename=None)
 ```
 
 For example:

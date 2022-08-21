@@ -1,10 +1,9 @@
 #!/usr/bin/python3
 
-import os, sys, re, serial
+import os, sys, re, serial, argparse
 import numpy as np
 from serial.tools import list_ports
 from struct import pack, unpack_from
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 # configuration
 
@@ -18,18 +17,19 @@ DEFAULT_SAMPLES = 3
 
 
 def parse_args():
-    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    formatter_class = argparse.ArgumentDefaultsHelpFormatter
+    parser = argparse.ArgumentParser(formatter_class=formatter_class)
     # value options 
-    parser.add_argument('--filename', default=CALFILE, help='calibration file')
+    parser.add_argument('--calfile', default=CALFILE, help='calibration file')
     parser.add_argument('--start', type=float, help='start frequency (Hz)')
     parser.add_argument('--stop', type=float, help='stop frequency (Hz)')
+    parser.add_argument('--points', type=int, help='frequency points in sweep')
     # SOLT calibration
     parser.add_argument('--init', action='store_true', help='initialize calibration')
     parser.add_argument('--open', action='store_true', help='open calibration')
     parser.add_argument('--short', action='store_true', help='short calibration')
     parser.add_argument('--load', action='store_true', help='load calibration')
     parser.add_argument('--thru', action='store_true', help='thru calibration')
-    parser.add_argument('--points', type=int, help='frequency points in sweep')
     parser.add_argument('--samples', type=int, help='samples per frequency')
     parser.add_argument('--average', action='store_true', help='average samples')
     # other flags
@@ -112,7 +112,7 @@ def read_touchstone(text):
     return freq, data
 
 
-def write_touchstone(freq, data, gamma=False):
+def write_touchstone(freq, data, gamma):
     line = []
     line.append('# MHz S MA R 50')
     entry = ' {:11.5e} {:8.2f}'
@@ -362,7 +362,7 @@ def cal_interpolate(cal, start, stop, points):
                 cal[name] = np.interp(freq_new, freq, data)
 
 
-def cal_init(start, stop, points, samples, average, filename):
+def cal_init(start, stop, points, samples, average, calfile):
     start = DEFAULT_FSTART if start is None else start
     stop = DEFAULT_FSTOP if stop is None else stop
     points = DEFAULT_POINTS if points is None else points
@@ -375,23 +375,23 @@ def cal_init(start, stop, points, samples, average, filename):
     assert(stop > start)
     assert(points > 0)
     assert(samples > 0)
-    np.savez(filename, start=start, stop=stop, points=points, 
+    np.savez(calfile, start=start, stop=stop, points=points, 
              average=average, samples=samples)
 
 
-def cal_load(filename):
+def cal_load(calfile):
     try:
-        ext = os.path.splitext(filename)[1]
+        ext = os.path.splitext(calfile)[1]
         if ext.lower() != '.npz':
-            filename += '.npz'
-        npzfile = np.load(filename)
+            calfile += '.npz'
+        npzfile = np.load(calfile)
     except FileNotFoundError:
         raise RuntimeError('No calibration file, please initialize.')
     return dict(npzfile)
 
 
-def cal_info(filename, calibrations):
-    cal = cal_load(filename)
+def cal_info(calfile, calibrations):
+    cal = cal_load(calfile)
     line = []
     line.append('start:   {:.6g} MHz'.format(cal['start'] / 1e6))
     line.append('stop:    {:.6g} MHz'.format(cal['stop'] / 1e6))
@@ -416,21 +416,20 @@ def measure(cal, sweep):
     return freq, data
 
 
-def do_calibration(sweep, unit, filename):
-    cal = cal_load(filename)
+def do_calibration(sweep, unit, calfile):
+    cal = cal_load(calfile)
     freq, data = measure(cal=cal, sweep=sweep)
     cal[unit] = data[:,0]
     if unit == 'thru':
         cal['thru21'] = data[:,1]
-    np.savez(filename, **cal)
+    np.savez(calfile, **cal)
 
 
-def do_sweep(sweep, start, stop, points, gamma, filename):
-    cal = cal_load(filename)
+def do_sweep(cal, start, stop, points, sweep):
     cal_interpolate(cal=cal, start=start, stop=stop, points=points)
     freq, data = measure(cal=cal, sweep=sweep)
     data = cal_correct(cal=cal, data=data)
-    return write_touchstone(freq=freq, data=data, gamma=gamma)
+    return freq, data
 
 
 def cli(args):
@@ -447,7 +446,7 @@ def cli(args):
 
     # show details
     if args.info:
-        text = cal_info(args.filename, calibrations=CALIBRATIONS)
+        text = cal_info(args.calfile, calibrations=CALIBRATIONS)
         print(text)
         return
 
@@ -456,25 +455,34 @@ def cli(args):
 
     # operations
     if args.init:
-        cal_init(
-            start=args.start, stop=args.stop, points=args.points,
-            samples=args.samples, average=args.average, filename=args.filename)
+        cal_init(start=args.start, stop=args.stop, points=args.points,
+                 samples=args.samples, average=args.average, 
+                 calfile=args.calfile)
     elif unit:
-        do_calibration(sweep=sweep, unit=unit[0], filename=args.filename)
+        do_calibration(sweep=sweep, unit=unit[0], calfile=args.calfile)
     else:
-        text = do_sweep(sweep=sweep, start=args.start, stop=args.stop,
-            points=args.points, gamma=args.gamma, filename=args.filename)
+        cal = cal_load(args.calfile)
+        freq, data = do_sweep(cal=cal, start=args.start, stop=args.stop, 
+                              points=args.points, sweep=sweep)
+        text = write_touchstone(freq=freq, data=data, gamma=args.gamma)
         print(text)
 
 
-def getvna(device=None, filename=CALFILE):
-    cal_orig = cal_load(filename)
-    def fn(start=None, stop=None, points=None):
+def getvna(device=None, calfile=CALFILE):
+    cal_orig = cal_load(calfile)
+    def fn(start=None, stop=None, points=None, filename=None):
+        if filename is not None:
+            ext = os.path.splitext(filename)[1]
+            if ext != '.s1p' and ext != '.s2p':
+                raise ValueError
         cal = cal_orig.copy()
-        cal_interpolate(cal=cal, start=start, stop=stop, points=points)
         sweep = getport(device)
-        freq, data = measure(cal=cal, sweep=sweep)
-        data = cal_correct(cal=cal, data=data)
+        freq, data = do_sweep(cal=cal, start=start, stop=stop,
+                              points=points, sweep=sweep)
+        if filename is not None:
+            text = write_touchstone(freq=freq, data=data, gamma=ext=='.s1p')
+            with open(filename, 'w') as f: 
+                f.write(text)
         return freq, data
     return fn
 

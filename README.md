@@ -28,11 +28,11 @@ After calibration, just issue the following on the command line.
 ```
 $ nanocli
 # MHz S MA R 50
-0.100000     6.36582e-01    -0.67 8.23130e-05   125.18 0.00000e+00     0.00 0.00000e+00     0.00
-2.575000     6.39556e-01   -16.74 9.59544e-06   139.06 0.00000e+00     0.00 0.00000e+00     0.00
-5.050000     6.48333e-01   -32.98 2.47052e-05   115.12 0.00000e+00     0.00 0.00000e+00     0.00
-7.525000     6.62833e-01   -49.71 3.64556e-05    70.43 0.00000e+00     0.00 0.00000e+00     0.00
-10.000000    6.82751e-01   -67.21 9.08949e-05    80.11 0.00000e+00     0.00 0.00000e+00     0.00
+0.100000     6.36445e-01    -0.67 2.32551e-05   136.98 0.00000e+00     0.00 0.00000e+00     0.00
+2.575000     6.39618e-01   -16.72 5.06521e-05   113.48 0.00000e+00     0.00 0.00000e+00     0.00
+5.050000     6.48363e-01   -32.95 3.84420e-05   139.69 0.00000e+00     0.00 0.00000e+00     0.00
+7.525000     6.62878e-01   -49.68 3.35834e-05    99.99 0.00000e+00     0.00 0.00000e+00     0.00
+10.000000    6.82772e-01   -67.19 4.12503e-05    78.01 0.00000e+00     0.00 0.00000e+00     0.00
 ```
 
 
@@ -84,15 +84,15 @@ Now let's run a sweep.
 ```
 $ nanocli | head
 # MHz S MA R 50
-0.100000     6.36041e-01    -0.66 8.90922e-05   117.25 0.00000e+00     0.00 0.00000e+00     0.00
-0.124750     6.36282e-01    -0.85 7.19103e-05   127.53 0.00000e+00     0.00 0.00000e+00     0.00
-0.149500     6.36288e-01    -1.02 3.68157e-05   125.06 0.00000e+00     0.00 0.00000e+00     0.00
-0.174250     6.36294e-01    -1.19 8.00947e-05   122.50 0.00000e+00     0.00 0.00000e+00     0.00
-0.199000     6.36307e-01    -1.36 7.73447e-05   169.41 0.00000e+00     0.00 0.00000e+00     0.00
-0.223750     6.36297e-01    -1.52 6.85951e-05   131.46 0.00000e+00     0.00 0.00000e+00     0.00
-0.248500     6.36316e-01    -1.69 8.22196e-05   142.26 0.00000e+00     0.00 0.00000e+00     0.00
-0.273250     6.36339e-01    -1.85 5.13153e-05   143.67 0.00000e+00     0.00 0.00000e+00     0.00
-0.298000     6.36328e-01    -2.01 4.09490e-05   156.76 0.00000e+00     0.00 0.00000e+00     0.00
+0.100000     6.36109e-01    -0.66 6.35929e-05   136.29 0.00000e+00     0.00 0.00000e+00     0.00
+0.124750     6.36282e-01    -0.85 8.50108e-05   150.64 0.00000e+00     0.00 0.00000e+00     0.00
+0.149500     6.36318e-01    -1.02 3.74528e-05   175.00 0.00000e+00     0.00 0.00000e+00     0.00
+0.174250     6.36327e-01    -1.19 9.57142e-05   122.16 0.00000e+00     0.00 0.00000e+00     0.00
+0.199000     6.36398e-01    -1.36 6.56578e-05   168.31 0.00000e+00     0.00 0.00000e+00     0.00
+0.223750     6.36308e-01    -1.52 6.65813e-05   122.33 0.00000e+00     0.00 0.00000e+00     0.00
+0.248500     6.36368e-01    -1.68 4.90364e-05   115.12 0.00000e+00     0.00 0.00000e+00     0.00
+0.273250     6.36432e-01    -1.84 6.34475e-05  -160.78 0.00000e+00     0.00 0.00000e+00     0.00
+0.298000     6.36343e-01    -2.01 4.00861e-05   105.09 0.00000e+00     0.00 0.00000e+00     0.00
 ```
 
 
@@ -102,15 +102,15 @@ Write a s1p file to stdout.
 ```
 $ nanocli --gamma | head
 # MHz S MA R 50
-0.100000     6.36438e-01    -0.67
-0.124750     6.36349e-01    -0.85
-0.149500     6.36251e-01    -1.02
-0.174250     6.36241e-01    -1.19
-0.199000     6.36335e-01    -1.36
-0.223750     6.36286e-01    -1.52
-0.248500     6.36300e-01    -1.68
-0.273250     6.36350e-01    -1.85
-0.298000     6.36338e-01    -2.01
+0.100000     6.36373e-01    -0.67
+0.124750     6.36306e-01    -0.84
+0.149500     6.36289e-01    -1.02
+0.174250     6.36340e-01    -1.18
+0.199000     6.36342e-01    -1.35
+0.223750     6.36377e-01    -1.51
+0.248500     6.36322e-01    -1.68
+0.273250     6.36355e-01    -1.84
+0.298000     6.36358e-01    -2.00
 ```
 
 
@@ -149,28 +149,28 @@ The utility's command line usage is as follows:
 
 ```
 $ nanocli --help
-usage: nanocli [-h] [--filename FILENAME] [--start START] [--stop STOP]
-               [--init] [--open] [--short] [--load] [--thru] [--points POINTS]
+usage: nanocli [-h] [--calfile CALFILE] [--start START] [--stop STOP]
+               [--points POINTS] [--init] [--open] [--short] [--load] [--thru]
                [--samples SAMPLES] [--average] [--gamma] [--device DEVICE]
                [-i] [-l]
 
 optional arguments:
-  -h, --help           show this help message and exit
-  --filename FILENAME  calibration file (default: cal.npz)
-  --start START        start frequency (Hz) (default: None)
-  --stop STOP          stop frequency (Hz) (default: None)
-  --init               initialize calibration (default: False)
-  --open               open calibration (default: False)
-  --short              short calibration (default: False)
-  --load               load calibration (default: False)
-  --thru               thru calibration (default: False)
-  --points POINTS      frequency points in sweep (default: None)
-  --samples SAMPLES    samples per frequency (default: None)
-  --average            average samples (default: False)
-  --gamma              output only S11 (default: False)
-  --device DEVICE      tty device name of nanovna to use (default: None)
-  -i, --info           show calibration info (default: False)
-  -l, --list           list available devices (default: False)
+  -h, --help         show this help message and exit
+  --calfile CALFILE  calibration file (default: cal.npz)
+  --start START      start frequency (Hz) (default: None)
+  --stop STOP        stop frequency (Hz) (default: None)
+  --points POINTS    frequency points in sweep (default: None)
+  --init             initialize calibration (default: False)
+  --open             open calibration (default: False)
+  --short            short calibration (default: False)
+  --load             load calibration (default: False)
+  --thru             thru calibration (default: False)
+  --samples SAMPLES  samples per frequency (default: None)
+  --average          average samples (default: False)
+  --gamma            output only S11 (default: False)
+  --device DEVICE    tty device name of nanovna to use (default: None)
+  -i, --info         show calibration info (default: False)
+  -l, --list         list available devices (default: False)
 ```
 
 
@@ -235,9 +235,13 @@ for the frequency sweep by passing values for
 start, stop or points will force an interpolation of the calibration
 data.  
 
+Setting the filename option will save the results to this file.
+The function will then return the name of this file.  The file
+extension must be either 's1p' or 's2p'.
+
 ```python
-sweep = getvna(device=None, filename='cal')
-sweep(start=None, stop=None, points=None)
+sweep = getvna(device=None, calname='cal')
+sweep(start=None, stop=None, points=None, filename=None)
 ```
 
 For example:
@@ -245,16 +249,16 @@ For example:
 
 ```
 $ python3 -c 'from nanocli import getvna; f,d = getvna()(start=3e6, stop=6e6); print(d)' | head
-[[ 6.03812736e-01-2.13788688e-01j -9.98200000e-06+1.65550000e-05j]
- [ 6.03596608e-01-2.14311904e-01j -2.36090000e-05+4.75220000e-05j]
- [ 6.03433536e-01-2.14847488e-01j -2.78000000e-05+3.79590000e-05j]
- [ 6.03266176e-01-2.15371984e-01j -3.38760000e-05+3.29220000e-05j]
- [ 6.03098176e-01-2.15983792e-01j -9.98100000e-06+2.72820000e-05j]
- [ 6.02911680e-01-2.16456288e-01j -1.47410000e-05+5.21020000e-05j]
- [ 6.02774400e-01-2.16896048e-01j -1.26580000e-05+4.15710000e-05j]
- [ 6.02621120e-01-2.17522336e-01j  8.72000000e-07+8.94270000e-05j]
- [ 6.02445376e-01-2.18023680e-01j -1.32270000e-05+1.43160000e-05j]
- [ 6.02270784e-01-2.18532064e-01j -4.00010000e-05+6.38880000e-05j]
+[[ 6.03945344e-01-2.13709216e-01j -4.64940000e-05+7.38160000e-05j]
+ [ 6.03728192e-01-2.14155776e-01j -3.82350000e-05+3.75260000e-05j]
+ [ 6.03539712e-01-2.14678176e-01j  9.33400000e-06+6.19160000e-05j]
+ [ 6.03384448e-01-2.15204416e-01j -1.79890000e-05+3.35190000e-05j]
+ [ 6.03226368e-01-2.15712160e-01j -2.77610000e-05+5.45100000e-05j]
+ [ 6.03012032e-01-2.16203120e-01j -2.74510000e-05+4.38000000e-05j]
+ [ 6.02889792e-01-2.16796880e-01j  2.18270000e-05+4.54730000e-05j]
+ [ 6.02720576e-01-2.17342912e-01j  3.94900000e-06+7.72860000e-05j]
+ [ 6.02566464e-01-2.17785216e-01j -1.45040000e-05+4.35450000e-05j]
+ [ 6.02368448e-01-2.18366880e-01j -1.37610000e-05+5.90930000e-05j]
 ```
 
 
